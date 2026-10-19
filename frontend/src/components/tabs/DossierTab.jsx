@@ -12,9 +12,9 @@ export default function DossierTab({ finalReport, reportBottomRef }) {
           <div ref={reportBottomRef} />
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-zinc-500 space-y-2">
-          <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
-          <p className="text-xs font-mono">Synthesizing findings & document analysis into dossier...</p>
+        <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-zinc-400 space-y-2">
+          <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" />
+          <p className="text-xs">Compiling job report and recommendations...</p>
         </div>
       )}
     </div>

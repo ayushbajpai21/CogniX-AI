@@ -146,7 +146,7 @@ export default function Sidebar({
               <button
                 onClick={() => setIsSidebarExpanded(true)}
                 className="group relative p-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
-                title="Past Dossiers"
+                title="Saved Reports"
               >
                 <Clock className="w-4 h-4" />
                 {history.length > 0 && (
@@ -155,7 +155,7 @@ export default function Sidebar({
                   </span>
                 )}
                 <span className="absolute left-full ml-2.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  Past Dossiers ({history.length})
+                  Saved Reports ({history.length})
                 </span>
               </button>
 

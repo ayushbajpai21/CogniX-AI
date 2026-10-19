@@ -1,19 +1,19 @@
 export const SUGGESTED_TOPICS = [
-  "AI & ML Engineer (Fresher / Junior Openings 2026)",
-  "Full Stack Web Developer (0-2 Yrs Remote)",
-  "Data Science & Analytics Internships",
-  "GenAI & Multi-Agent Systems Developer"
+  "MERN Stack Developer in Noida & Delhi NCR",
+  "Full Stack Web Developer (Remote / India)",
+  "AI & Machine Learning Engineer in Bengaluru",
+  "React & Node.js Developer (Fresher / 0-2 Yrs)"
 ];
 
 export const DEFAULT_RESUME_PROMPTS = [
-  "Find Live Openings with Direct Apply Links for My Resume",
-  "Run ATS Gap Analysis & Identify Missing 2026 Keywords",
-  "Generate 1-Click STAR Project Bullets for My Resume",
-  "Draft Ready-to-Send Cold Email & Recruiter LinkedIn DM"
+  "Find Verified Live Jobs for My Resume (India & Remote)",
+  "Check Resume Skill Gaps & Missing Keywords",
+  "Improve My Resume Project Points (STAR Format)",
+  "Write Ready-to-Send Cold Email & LinkedIn Message"
 ];
 
 export const DEFAULT_NOTES_PROMPTS = [
-  "Extract Key Tech Skills & Find Matching Live Roles",
-  "Generate Technical Interview Q&A with Live Scoring",
-  "Cross-Reference Knowledge with 2026 Industry Hiring State"
+  "Find Live Jobs Matching These Technical Skills",
+  "Identify Missing Skills for Target Roles",
+  "Prepare Technical Interview Questions"
 ];

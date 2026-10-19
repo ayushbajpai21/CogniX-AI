@@ -14,29 +14,29 @@ const AGENTS = [
   {
     id: 'search',
     num: '01',
-    title: 'Job Scout Agent',
-    desc: 'Live Openings & Direct Career Link Mining',
+    title: 'Job Scout',
+    desc: 'Finding active jobs & direct apply links',
     icon: Briefcase,
   },
   {
     id: 'reader',
     num: '02',
-    title: 'ATS Gap Analyzer',
-    desc: '2026 Hiring Filters & Keyword Diagnostics',
+    title: 'Skill Analyzer',
+    desc: 'Checking resume & missing keywords',
     icon: Target,
   },
   {
     id: 'writer',
     num: '03',
-    title: 'STAR Rewriter Agent',
-    desc: '1-Click High-Impact Resume Project Bullets',
+    title: 'Project Rewriter',
+    desc: 'Writing stronger resume points',
     icon: Sparkles,
   },
   {
     id: 'critic',
     num: '04',
-    title: 'Outreach & Pitch Agent',
-    desc: 'Personalized Cold Emails & LinkedIn DMs',
+    title: 'Outreach Assistant',
+    desc: 'Drafting emails & recruiter messages',
     icon: Mail,
   },
 ];
@@ -99,8 +99,8 @@ export default function App() {
           {research.activeInquiry && (
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <div className="truncate">
-                <span className="text-[11px] font-mono uppercase text-cyan-400 font-bold tracking-wider">
-                  Target Role / Candidate Query
+                <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider">
+                  Target Search
                 </span>
                 <h2 className="text-base sm:text-xl font-bold text-white truncate tracking-tight">
                   {research.activeInquiry}
@@ -108,13 +108,13 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2">
                 {research.attachedFile && (
-                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400">
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-300">
                     CV: {research.attachedFile.name}
                   </span>
                 )}
                 {research.isRunning && (
-                  <span className="px-2.5 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs animate-pulse">
-                    Autonomous Fleet Active
+                  <span className="px-2.5 py-1 rounded bg-zinc-900 border border-cyan-500/40 text-cyan-300 font-mono text-xs animate-pulse">
+                    Searching Jobs...
                   </span>
                 )}
               </div>
@@ -144,7 +144,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Modular Tabs Container (Live Jobs, ATS Gaps, Outreach Hub, Dossier, Auditor, Evidence) */}
+          {/* Modular Tabs Container (Live Jobs, Skill Gaps, Outreach Messages, Job Report, Profile Review, Sources) */}
           {(research.finalReport || research.isRunning || research.liveJobs.length > 0) && (
             <TabsContainer
               activeTab={research.activeTab}

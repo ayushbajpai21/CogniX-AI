@@ -47,12 +47,12 @@ export function useCareerResearch() {
   const [documentVault, setDocumentVault] = useState(() => getStoredJson('cognix_vault', []));
   const [history, setHistory] = useState(() => getStoredJson('cognix_history', []));
 
-  // Agent Steps State
+  // Agent Steps State (Simple, natural terminology)
   const defaultSteps = {
-    search: { status: 'idle', data: null, message: 'Ready to scout live openings' },
-    reader: { status: 'idle', data: null, message: 'Waiting for Scout Agent handoff' },
-    writer: { status: 'idle', data: null, message: 'Waiting for ATS Gap Analyzer' },
-    critic: { status: 'idle', data: null, message: 'Waiting for STAR Rewriter' },
+    search: { status: 'idle', data: null, message: 'Ready to find verified jobs' },
+    reader: { status: 'idle', data: null, message: 'Waiting for job list' },
+    writer: { status: 'idle', data: null, message: 'Waiting for skill analysis' },
+    critic: { status: 'idle', data: null, message: 'Waiting for project rewrites' },
   };
 
   const [steps, setSteps] = useState(() => savedActive?.steps || defaultSteps);
@@ -242,7 +242,7 @@ export function useCareerResearch() {
   };
 
   const clearAllHistory = () => {
-    if (window.confirm('Clear all past research dossiers?')) {
+    if (window.confirm('Clear all past saved reports?')) {
       setHistory([]);
     }
   };
@@ -266,10 +266,10 @@ export function useCareerResearch() {
     setActiveTab('jobs');
 
     setSteps({
-      search: { status: 'running', data: null, message: 'Scout Agent: Scouting live openings with direct apply links...' },
-      reader: { status: 'waiting', data: null, message: 'Waiting for Scout Agent handoff' },
-      writer: { status: 'waiting', data: null, message: 'Waiting for ATS Gap Analyzer' },
-      critic: { status: 'waiting', data: null, message: 'Waiting for STAR Rewriter' },
+      search: { status: 'running', data: null, message: 'Job Scout: Finding verified live jobs...' },
+      reader: { status: 'waiting', data: null, message: 'Skill Analyzer on standby' },
+      writer: { status: 'waiting', data: null, message: 'Project Rewriter on standby' },
+      critic: { status: 'waiting', data: null, message: 'Outreach Assistant on standby' },
     });
 
     try {
@@ -321,17 +321,17 @@ export function useCareerResearch() {
           const next = { ...prev };
 
           if (step === 'search' && status === 'done') {
-            next.search = { status: 'done', data, message: 'Live job openings discovered' };
-            next.reader = { status: 'running', data: null, message: 'ATS Gap Agent: Reverse-engineering hiring filters...' };
+            next.search = { status: 'done', data, message: 'Verified jobs found' };
+            next.reader = { status: 'running', data: null, message: 'Skill Analyzer: Checking missing skills...' };
           } else if (step === 'reader' && status === 'done') {
-            next.reader = { status: 'done', data, message: 'ATS gap diagnostics complete' };
-            next.writer = { status: 'running', data: null, message: 'STAR Rewriter: Crafting 1-click project bullets...' };
+            next.reader = { status: 'done', data, message: 'Skill analysis complete' };
+            next.writer = { status: 'running', data: null, message: 'Project Rewriter: Improving project points...' };
           } else if (step === 'writer' && status === 'done') {
-            next.writer = { status: 'done', data, message: 'STAR project rewrites synthesized' };
-            next.critic = { status: 'running', data: null, message: 'Outreach Agent: Drafting cold email & LinkedIn DMs...' };
+            next.writer = { status: 'done', data, message: 'Project points improved' };
+            next.critic = { status: 'running', data: null, message: 'Outreach Assistant: Writing cold emails...' };
             setFinalReport(data);
           } else if (step === 'critic' && status === 'done') {
-            next.critic = { status: 'done', data, message: 'Outreach templates generated' };
+            next.critic = { status: 'done', data, message: 'Outreach messages ready' };
             setCriticFeedback(data);
           } else {
             next[step] = {
@@ -400,7 +400,7 @@ export function useCareerResearch() {
     const link = document.createElement('a');
     link.href = url;
     const name = (activeInquiry || 'cognix_career').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    link.download = `${name}_dossier.md`;
+    link.download = `${name}_report.md`;
     link.click();
     URL.revokeObjectURL(url);
   };
