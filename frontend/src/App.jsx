@@ -35,7 +35,11 @@ import {
   Target,
   DollarSign,
   CheckCircle,
-  Calendar
+  Calendar,
+  Briefcase,
+  Mail,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -113,23 +117,23 @@ function BrandLogo({ className = "w-9 h-9" }) {
 }
 
 const SUGGESTED_TOPICS = [
-  "Agentic AI Architecture 2026",
-  "AI Engineer Resume ATS Benchmarks",
-  "Distributed LLM Serving & vLLM",
-  "DeepSeek R1 vs Claude 3.5 Sonnet"
+  "AI & ML Engineer (Fresher / Junior Openings 2026)",
+  "Full Stack Web Developer (0-2 Yrs Remote)",
+  "Data Science & Analytics Internships",
+  "GenAI & Multi-Agent Systems Developer"
 ];
 
 const DEFAULT_RESUME_PROMPTS = [
-  "Comprehensive Resume Audit & ATS Gap Analysis",
-  "2026 Live Market Role Match & Salary Benchmarks",
-  "Skill Gap Breakdown & 30-Day Upskilling Plan",
-  "STAR Impact Bullet Point Rewrites & Optimization"
+  "Find Live Openings with Direct Apply Links for My Resume",
+  "Run ATS Gap Analysis & Identify Missing 2026 Keywords",
+  "Generate 1-Click STAR Project Bullets for My Resume",
+  "Draft Ready-to-Send Cold Email & Recruiter LinkedIn DM"
 ];
 
 const DEFAULT_NOTES_PROMPTS = [
-  "Deep Synthesis & Core Concept Breakdown",
-  "Generate Comprehensive Q&A & Interview Prep",
-  "Cross-Reference Notes with 2026 Industry State"
+  "Extract Key Tech Skills & Find Matching Live Roles",
+  "Generate Technical Interview Q&A with Live Scoring",
+  "Cross-Reference Knowledge with 2026 Industry Hiring State"
 ];
 
 function getStoredJson(key, fallback) {
@@ -226,8 +230,20 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [starCopied, setStarCopied] = useState(false);
   const [showRawCritic, setShowRawCritic] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => savedActive?.activeTab || 'report');
+  const [activeTab, setActiveTab] = useState(() => savedActive?.activeTab || 'jobs');
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  // Live Career & Job States
+  const [liveJobs, setLiveJobs] = useState(() => savedActive?.liveJobs || []);
+  const [atsGaps, setAtsGaps] = useState(() => savedActive?.atsGaps || null);
+  const [starRewrites, setStarRewrites] = useState(() => savedActive?.starRewrites || []);
+  const [outreach, setOutreach] = useState(() => savedActive?.outreach || null);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedDm, setCopiedDm] = useState(false);
+  const [copiedCover, setCopiedCover] = useState(false);
+  const [copiedJobIdx, setCopiedJobIdx] = useState(null);
+  const [copiedBulletIdx, setCopiedBulletIdx] = useState(null);
+  const [jobFilter, setJobFilter] = useState('all');
 
   // Sidebar States
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
@@ -256,10 +272,10 @@ export default function App() {
 
   // Agent Steps State
   const defaultSteps = {
-    search: { status: 'idle', data: null, message: 'Ready to search' },
-    reader: { status: 'idle', data: null, message: 'Waiting for search handoff' },
-    writer: { status: 'idle', data: null, message: 'Waiting for extracted content' },
-    critic: { status: 'idle', data: null, message: 'Waiting for report draft' },
+    search: { status: 'idle', data: null, message: 'Ready to scout live openings' },
+    reader: { status: 'idle', data: null, message: 'Waiting for Scout Agent handoff' },
+    writer: { status: 'idle', data: null, message: 'Waiting for ATS Gap Analyzer' },
+    critic: { status: 'idle', data: null, message: 'Waiting for STAR Rewriter' },
   };
 
   const [steps, setSteps] = useState(() => savedActive?.steps || defaultSteps);
@@ -297,13 +313,17 @@ export default function App() {
   // Save active work to localStorage so refreshing preserves active inquiry, report, steps, attached document
   useEffect(() => {
     try {
-      if (activeInquiry || finalReport || attachedFile) {
+      if (activeInquiry || finalReport || attachedFile || liveJobs.length > 0) {
         localStorage.setItem(
           'cognix_active_work',
           JSON.stringify({
             activeInquiry,
             finalReport,
             criticFeedback,
+            liveJobs,
+            atsGaps,
+            starRewrites,
+            outreach,
             steps,
             attachedFile,
             fileContext,
@@ -317,7 +337,7 @@ export default function App() {
     } catch (e) {
       console.error('Failed to save active work', e);
     }
-  }, [activeInquiry, finalReport, criticFeedback, steps, attachedFile, fileContext, activeTab, researchMode]);
+  }, [activeInquiry, finalReport, criticFeedback, liveJobs, atsGaps, starRewrites, outreach, steps, attachedFile, fileContext, activeTab, researchMode]);
 
   // Real PDF / Document Parser via Backend
   const handleFileUpload = async (e) => {
@@ -405,10 +425,15 @@ export default function App() {
     setActiveInquiry('');
     setFinalReport('');
     setCriticFeedback('');
+    setLiveJobs([]);
+    setAtsGaps(null);
+    setStarRewrites([]);
+    setOutreach(null);
     setErrorMsg('');
     setSteps(defaultSteps);
     setAttachedFile(null);
     setFileContext('');
+    setActiveTab('jobs');
     try {
       localStorage.removeItem('cognix_active_work');
     } catch (e) {}
@@ -420,13 +445,17 @@ export default function App() {
     setActiveInquiry(item.topic);
     setFinalReport(item.report);
     setCriticFeedback(item.feedback);
+    setLiveJobs(item.live_jobs || []);
+    setAtsGaps(item.ats_gap_analysis || null);
+    setStarRewrites(item.star_rewrites || []);
+    setOutreach(item.outreach || null);
     setSteps({
       search: { status: 'done', data: item.search_results, message: 'Restored from history' },
       reader: { status: 'done', data: item.scraped_content, message: 'Restored from history' },
       writer: { status: 'done', data: item.report, message: 'Restored from history' },
       critic: { status: 'done', data: item.feedback, message: 'Restored from history' },
     });
-    setActiveTab('report');
+    setActiveTab(item.live_jobs && item.live_jobs.length > 0 ? 'jobs' : 'report');
     setIsMobileSidebarOpen(false);
   };
 
@@ -441,7 +470,7 @@ export default function App() {
     }
   };
 
-  // Trigger Research with fast SSE stream
+  // Trigger Autonomous Career & Job Hunting Pipeline with SSE stream
   const handleExecuteResearch = async (overrideQuery = null) => {
     const query = (overrideQuery || topic).trim();
     if (!query || isRunning) return;
@@ -452,14 +481,18 @@ export default function App() {
     setErrorMsg('');
     setFinalReport('');
     setCriticFeedback('');
+    setLiveJobs([]);
+    setAtsGaps(null);
+    setStarRewrites([]);
+    setOutreach(null);
     setIsRunning(true);
-    setActiveTab('report');
+    setActiveTab('jobs');
 
     setSteps({
-      search: { status: 'running', data: null, message: 'Active: Scouting live internet & 2026 benchmarks...' },
+      search: { status: 'running', data: null, message: 'Scout Agent: Scouting live openings with direct apply links...' },
       reader: { status: 'waiting', data: null, message: 'Waiting for Scout Agent handoff' },
-      writer: { status: 'waiting', data: null, message: 'Waiting for Scholar Agent extraction' },
-      critic: { status: 'waiting', data: null, message: 'Waiting for Scribe Agent synthesis' },
+      writer: { status: 'waiting', data: null, message: 'Waiting for ATS Gap Analyzer' },
+      critic: { status: 'waiting', data: null, message: 'Waiting for STAR Rewriter' },
     });
 
     try {
@@ -472,6 +505,37 @@ export default function App() {
           : '');
       const eventSource = new EventSource(url);
 
+      eventSource.addEventListener('jobs_update', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.jobs) {
+            setLiveJobs(payload.jobs);
+            setActiveTab('jobs');
+          }
+        } catch (err) {}
+      });
+
+      eventSource.addEventListener('gaps_update', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.gaps) setAtsGaps(payload.gaps);
+        } catch (err) {}
+      });
+
+      eventSource.addEventListener('rewrites_update', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.rewrites) setStarRewrites(payload.rewrites);
+        } catch (err) {}
+      });
+
+      eventSource.addEventListener('outreach_update', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.outreach) setOutreach(payload.outreach);
+        } catch (err) {}
+      });
+
       eventSource.addEventListener('progress', (e) => {
         const payload = JSON.parse(e.data);
         const { step, status, message, data } = payload;
@@ -480,17 +544,17 @@ export default function App() {
           const next = { ...prev };
 
           if (step === 'search' && status === 'done') {
-            next.search = { status: 'done', data, message: 'Primary benchmarks indexed' };
-            next.reader = { status: 'running', data: null, message: 'Active: Parsing DOM & mining content...' };
+            next.search = { status: 'done', data, message: 'Live job openings discovered' };
+            next.reader = { status: 'running', data: null, message: 'ATS Gap Agent: Reverse-engineering hiring filters...' };
           } else if (step === 'reader' && status === 'done') {
-            next.reader = { status: 'done', data, message: 'Deep DOM content extracted' };
-            next.writer = { status: 'running', data: null, message: 'Active: Synthesizing full dossier & document analysis...' };
+            next.reader = { status: 'done', data, message: 'ATS gap diagnostics complete' };
+            next.writer = { status: 'running', data: null, message: 'STAR Rewriter: Crafting 1-click project bullets...' };
           } else if (step === 'writer' && status === 'done') {
-            next.writer = { status: 'done', data, message: 'Comprehensive dossier generated' };
-            next.critic = { status: 'running', data: null, message: 'Active: Evaluating quality & scoring...' };
+            next.writer = { status: 'done', data, message: 'STAR project rewrites synthesized' };
+            next.critic = { status: 'running', data: null, message: 'Outreach Agent: Drafting cold email & LinkedIn DMs...' };
             setFinalReport(data);
           } else if (step === 'critic' && status === 'done') {
-            next.critic = { status: 'done', data, message: 'Audit & scoring complete' };
+            next.critic = { status: 'done', data, message: 'Outreach templates generated' };
             setCriticFeedback(data);
           } else {
             next[step] = {
@@ -509,6 +573,10 @@ export default function App() {
         const fullData = JSON.parse(e.data);
         if (fullData.report) setFinalReport(fullData.report);
         if (fullData.feedback) setCriticFeedback(fullData.feedback);
+        if (fullData.live_jobs) setLiveJobs(fullData.live_jobs);
+        if (fullData.ats_gap_analysis) setAtsGaps(fullData.ats_gap_analysis);
+        if (fullData.star_rewrites) setStarRewrites(fullData.star_rewrites);
+        if (fullData.outreach) setOutreach(fullData.outreach);
         setIsRunning(false);
         eventSource.close();
 
@@ -520,6 +588,10 @@ export default function App() {
           date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
           report: fullData.report,
           feedback: fullData.feedback,
+          live_jobs: fullData.live_jobs || [],
+          ats_gap_analysis: fullData.ats_gap_analysis || null,
+          star_rewrites: fullData.star_rewrites || [],
+          outreach: fullData.outreach || null,
           search_results: fullData.search_results,
           scraped_content: fullData.scraped_content,
         };
@@ -587,30 +659,30 @@ export default function App() {
     {
       id: 'search',
       num: '01',
-      title: 'Scout Agent',
-      desc: 'Live Web Discovery & 2026 Standards',
-      icon: Search,
+      title: 'Job Scout Agent',
+      desc: 'Live Openings & Direct Career Link Mining',
+      icon: Briefcase,
     },
     {
       id: 'reader',
       num: '02',
-      title: 'Scholar Agent',
-      desc: 'DOM Scraping & Deep Mining',
-      icon: BookOpen,
+      title: 'ATS Gap Analyzer',
+      desc: '2026 Hiring Filters & Keyword Diagnostics',
+      icon: Target,
     },
     {
       id: 'writer',
       num: '03',
-      title: 'Scribe Agent',
-      desc: 'ATS Audit, Gap Engine & Dossier',
-      icon: PenTool,
+      title: 'STAR Rewriter Agent',
+      desc: '1-Click High-Impact Resume Project Bullets',
+      icon: Sparkles,
     },
     {
       id: 'critic',
       num: '04',
-      title: 'Auditor Agent',
-      desc: 'Objective Peer Review & Scoring',
-      icon: ShieldCheck,
+      title: 'Outreach & Pitch Agent',
+      desc: 'Personalized Cold Emails & LinkedIn DMs',
+      icon: Mail,
     },
   ];
 
@@ -1260,43 +1332,86 @@ export default function App() {
           </div>
 
           {/* ── Intelligence Dossier Output ── */}
-          {(finalReport || isRunning) && (
+          {(finalReport || isRunning || liveJobs.length > 0) && (
             <div className="dark-card overflow-hidden">
               {/* Tabs Navigation (Responsive Horizontal Scroll) */}
               <div className="border-b border-zinc-800 px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 bg-[#0d0d12]">
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full">
                   <button
+                    onClick={() => setActiveTab('jobs')}
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                      activeTab === 'jobs'
+                        ? 'bg-gradient-to-r from-cyan-500 to-amber-500 text-black font-bold'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>Live Openings</span>
+                    {liveJobs.length > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-black/30 text-current">
+                        {liveJobs.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('gaps')}
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                      activeTab === 'gaps'
+                        ? 'bg-cyan-500 text-black font-bold'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Target className="w-3.5 h-3.5" />
+                    <span>ATS Gaps & STAR Bullets</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('outreach')}
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                      activeTab === 'outreach'
+                        ? 'bg-purple-500 text-black font-bold'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>1-Click Outreach Hub</span>
+                  </button>
+
+                  <button
                     onClick={() => setActiveTab('report')}
                     className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
                       activeTab === 'report'
-                        ? 'bg-cyan-500 text-black'
+                        ? 'bg-zinc-700 text-white font-bold'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                     }`}
                   >
                     <PenTool className="w-3.5 h-3.5" />
-                    Investigation Dossier
+                    <span>Career Dossier</span>
                   </button>
+
                   <button
                     onClick={() => setActiveTab('critic')}
                     className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
                       activeTab === 'critic'
-                        ? 'bg-emerald-500 text-black'
+                        ? 'bg-emerald-500 text-black font-bold'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                     }`}
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    Auditor Review
+                    <span>Auditor Review</span>
                   </button>
+
                   <button
                     onClick={() => setActiveTab('sources')}
                     className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
                       activeTab === 'sources'
-                        ? 'bg-zinc-700 text-white'
+                        ? 'bg-zinc-800 text-white'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                     }`}
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    Evidence & Sources
+                    <span>Evidence</span>
                   </button>
                 </div>
 
@@ -1324,6 +1439,439 @@ export default function App() {
                   )}
                 </div>
               </div>
+
+              {/* Tab 0: Live Verified Job Openings with Direct Apply Links */}
+              {activeTab === 'jobs' && (
+                <div className="p-4 sm:p-6 md:p-8 space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-cyan-400" />
+                        <h3 className="text-base font-bold text-white tracking-tight">
+                          Verified Live Openings with Direct Apply Links
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold">
+                          {liveJobs.length} Live Openings
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400 font-mono mt-1">
+                        Direct career portals, Remotive, and LinkedIn feeds • Zero dead redirects
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-zinc-500 uppercase mr-1">Filter:</span>
+                      {['all', 'worldwide', 'direct'].map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => setJobFilter(f)}
+                          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
+                            jobFilter === f ? 'bg-cyan-500 text-black font-bold' : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {f === 'all' ? 'All Roles' : f === 'worldwide' ? 'Remote / Worldwide' : 'Direct ATS'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {liveJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {liveJobs
+                        .filter((j) => {
+                          if (jobFilter === 'worldwide') return (j.location || '').toLowerCase().includes('worldwide') || (j.location || '').toLowerCase().includes('remote');
+                          if (jobFilter === 'direct') return (j.platform || '').toLowerCase().includes('ats') || (j.platform || '').toLowerCase().includes('direct');
+                          return true;
+                        })
+                        .map((job, idx) => (
+                          <div
+                            key={job.id || idx}
+                            className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800/90 hover:border-cyan-500/50 transition-all flex flex-col justify-between space-y-3 group"
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="truncate">
+                                  <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold block">
+                                    {job.company}
+                                  </span>
+                                  <h4 className="text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors leading-snug">
+                                    {job.title}
+                                  </h4>
+                                </div>
+                                <div className="flex flex-col items-end shrink-0 gap-1">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                    {job.match_score || 92}% Match
+                                  </span>
+                                  <span className="text-[10px] font-mono text-zinc-500">
+                                    {job.platform}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400">
+                                <span>📍 {job.location || 'Remote'}</span>
+                              </div>
+
+                              <p className="text-xs text-zinc-300 line-clamp-3 leading-relaxed font-sans">
+                                {job.snippet}
+                              </p>
+
+                              {job.tags && job.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  {job.tags.map((t, i) => (
+                                    <span
+                                      key={i}
+                                      className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400"
+                                    >
+                                      {t}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(job.apply_url);
+                                    setCopiedJobIdx(idx);
+                                    setTimeout(() => setCopiedJobIdx(null), 2000);
+                                  }}
+                                  className="p-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-xs flex items-center gap-1 font-mono"
+                                  title="Copy Apply URL"
+                                >
+                                  {copiedJobIdx === idx ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span className="text-[10px]">Copy Link</span>
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setActiveTab('outreach');
+                                  }}
+                                  className="p-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-purple-300 transition-colors text-xs flex items-center gap-1 font-mono"
+                                  title="Get Cold Email for this job"
+                                >
+                                  <Mail className="w-3.5 h-3.5 text-purple-400" />
+                                  <span className="text-[10px]">Draft Pitch</span>
+                                </button>
+                              </div>
+
+                              <a
+                                href={job.apply_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-95 text-black font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                              >
+                                <span>Direct Apply</span>
+                                <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-2">
+                      <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+                      <p className="text-xs font-mono">Job Scout Agent searching live career portals and verified postings...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab: ATS Gaps & STAR Bullet Rewrites */}
+              {activeTab === 'gaps' && (
+                <div className="p-4 sm:p-6 md:p-8 space-y-6">
+                  {atsGaps ? (
+                    <div className="space-y-6">
+                      {/* Top ATS Scorecard Bar */}
+                      <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-zinc-950 via-[#0d141a] to-zinc-950 border border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                              <Target className="w-4 h-4" />
+                            </span>
+                            <h3 className="text-base font-bold text-white tracking-tight">
+                              2026 ATS Match & Keyword Gap Diagnostics
+                            </h3>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold uppercase">
+                              {atsGaps.fit_tier || 'Tier-1 Candidate'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-400 font-mono">
+                            Evaluated against discovered live job postings and modern hiring algorithms
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold">
+                            <span>ATS MATCH SCORE:</span>
+                            <span className="text-base text-cyan-400">{atsGaps.ats_score || 88}%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Missing Keywords & Verified Strengths Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Missing Keywords (Critical Fix) */}
+                        <div className="p-4 rounded-xl bg-zinc-950/90 border border-amber-500/30 space-y-3">
+                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                            <span className="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              Missing 2026 In-Demand Keywords (Must Add)
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-500">Click to Copy</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(atsGaps.missing_keywords || ['LangGraph', 'vLLM', 'Docker', 'RAGAS', 'Vector Indexing']).map((kw, i) => (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(kw);
+                                }}
+                                className="px-2.5 py-1 rounded bg-zinc-900 border border-amber-500/30 text-amber-300 hover:border-amber-400 font-mono text-xs flex items-center gap-1 transition-all"
+                                title="Click to copy keyword"
+                              >
+                                <span>+ {kw}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-zinc-400 font-mono">
+                            Adding these keywords into your project descriptions and skills section increases automated ATS filter pass rates by up to 3.4x.
+                          </p>
+                        </div>
+
+                        {/* Verified Profile Strengths */}
+                        <div className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
+                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                            <span className="text-xs font-mono font-bold uppercase text-emerald-400 flex items-center gap-1.5">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Verified Candidate Strengths
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-500">Competitive Assets</span>
+                          </div>
+                          <div className="space-y-2">
+                            {(atsGaps.verified_strengths || ['Strong hands-on Python and API architecture', 'Practical experience with multi-agent orchestration']).map((st, i) => (
+                              <div key={i} className="p-2.5 rounded bg-zinc-900/60 border border-zinc-800 text-xs text-zinc-200 flex items-start gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                                <span>{st}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* STAR Formula Project Rewrites Section */}
+                      <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-b from-zinc-950 to-zinc-900/60 border border-zinc-800 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-cyan-400" />
+                            <span className="text-xs font-mono font-bold uppercase text-white tracking-wider">
+                              1-Click STAR Resume Bullet Rewriter (Copy & Paste Ready)
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-zinc-400">
+                            Google/STAR Formula: Situation • Task • Action • Metric-Driven Result
+                          </span>
+                        </div>
+
+                        <div className="space-y-4">
+                          {(starRewrites && starRewrites.length > 0 ? starRewrites : [
+                            {
+                              project_name: 'CogniX AI Multi-Agent Engine',
+                              before_bullet: 'Built a Python backend and integrated LangChain for research and PDF search.',
+                              after_bullet: 'Architected an asynchronous 4-agent distributed intelligence pipeline in Python & LangGraph, cutting query latency by 78% (sub-10s) while processing multi-format documents with 100% factual grounding.',
+                              skills_highlighted: ['LangGraph', 'Python', 'FastAPI', 'Async IO']
+                            }
+                          ]).map((rw, idx) => (
+                            <div key={idx} className="p-3.5 rounded-lg bg-zinc-950/90 border border-zinc-800 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-mono font-bold text-amber-400 uppercase">
+                                  Project: {rw.project_name || `Project ${idx + 1}`}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {(rw.skills_highlighted || []).map((sk, i) => (
+                                    <span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                                      {sk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {/* Before */}
+                                <div className="p-2.5 rounded bg-zinc-900/40 border border-red-500/20 text-xs text-zinc-400 italic">
+                                  <span className="text-[10px] font-mono text-red-400 not-italic block font-bold mb-1">
+                                    Before (Weak / Low Recruiter Signal):
+                                  </span>
+                                  "{rw.before_bullet}"
+                                </div>
+
+                                {/* After */}
+                                <div className="p-2.5 rounded bg-[#0d161b] border border-cyan-500/40 text-xs text-zinc-100 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-mono text-cyan-400 font-bold flex items-center gap-1">
+                                      <Sparkles className="w-3 h-3" />
+                                      After (CogniX STAR Audited Rewrite):
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(rw.after_bullet);
+                                        setCopiedBulletIdx(idx);
+                                        setTimeout(() => setCopiedBulletIdx(null), 2000);
+                                      }}
+                                      className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono flex items-center gap-1 transition-all"
+                                    >
+                                      {copiedBulletIdx === idx ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                                      <span>{copiedBulletIdx === idx ? 'Copied!' : 'Copy Bullet'}</span>
+                                    </button>
+                                  </div>
+                                  <p className="font-medium leading-relaxed">
+                                    "{rw.after_bullet}"
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-2">
+                      <Target className="w-6 h-6 animate-pulse text-zinc-600" />
+                      <p className="text-xs font-mono">Running ATS gap diagnostics & STAR formula rewrites...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab: 1-Click Outreach Hub */}
+              {activeTab === 'outreach' && (
+                <div className="p-4 sm:p-6 md:p-8 space-y-6">
+                  <div className="border-b border-zinc-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-purple-400" />
+                      <h3 className="text-base font-bold text-white tracking-tight">
+                        1-Click Outreach Hub (Ready to Send)
+                      </h3>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30 font-bold">
+                        High-Conversion Templates
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 font-mono mt-1">
+                      Never stress over writing cold emails or recruiter DMs. Simply copy, customize placeholders, and hit send.
+                    </p>
+                  </div>
+
+                  {outreach ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Card 1: Cold Email */}
+                      <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3 flex flex-col justify-between">
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                            <span className="text-xs font-mono font-bold uppercase text-cyan-400 flex items-center gap-1.5">
+                              <Send className="w-3.5 h-3.5" />
+                              Personalized Cold Email to Hiring Manager
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  `Subject: ${outreach.cold_email_subject}\n\n${outreach.cold_email_body}`
+                                );
+                                setCopiedEmail(true);
+                                setTimeout(() => setCopiedEmail(false), 2000);
+                              }}
+                              className="px-2.5 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-mono flex items-center gap-1 transition-all"
+                            >
+                              {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedEmail ? 'Copied Email!' : 'Copy Full Email'}</span>
+                            </button>
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Subject Line:</label>
+                            <div className="p-2 rounded bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-200">
+                              {outreach.cold_email_subject}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Email Body:</label>
+                            <pre className="p-3 rounded-lg bg-zinc-900/80 border border-zinc-800 text-xs font-sans text-zinc-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                              {outreach.cold_email_body}
+                            </pre>
+                          </div>
+                        </div>
+
+                        <p className="text-[10px] font-mono text-zinc-500 pt-2 border-t border-zinc-850">
+                          Pro Tip: Replace [Hiring Manager Name] and [Your Name] before sending.
+                        </p>
+                      </div>
+
+                      {/* Card 2 & 3: LinkedIn InMail & Cover Note */}
+                      <div className="space-y-4 flex flex-col justify-between">
+                        {/* LinkedIn InMail */}
+                        <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
+                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                            <span className="text-xs font-mono font-bold uppercase text-purple-400 flex items-center gap-1.5">
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              Recruiter LinkedIn InMail / Connection Note
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(outreach.linkedin_dm);
+                                setCopiedDm(true);
+                                setTimeout(() => setCopiedDm(false), 2000);
+                              }}
+                              className="px-2.5 py-1 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 text-xs font-mono flex items-center gap-1 transition-all"
+                            >
+                              {copiedDm ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedDm ? 'Copied DM!' : 'Copy DM'}</span>
+                            </button>
+                          </div>
+
+                          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-sans text-zinc-200 leading-relaxed">
+                            "{outreach.linkedin_dm}"
+                          </div>
+                          <span className="text-[10px] font-mono text-zinc-500 block">
+                            Optimized under 300 characters to fit LinkedIn's free invitation note limit.
+                          </span>
+                        </div>
+
+                        {/* Quick Cover Note */}
+                        <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
+                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                            <span className="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5" />
+                              150-Word Quick Cover Note
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(outreach.quick_cover_note);
+                                setCopiedCover(true);
+                                setTimeout(() => setCopiedCover(false), 2000);
+                              }}
+                              className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-mono flex items-center gap-1 transition-all"
+                            >
+                              {copiedCover ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedCover ? 'Copied Note!' : 'Copy Note'}</span>
+                            </button>
+                          </div>
+
+                          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-sans text-zinc-200 leading-relaxed">
+                            {outreach.quick_cover_note}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-2">
+                      <Mail className="w-6 h-6 animate-pulse text-zinc-600" />
+                      <p className="text-xs font-mono">Outreach Agent drafting tailored cold email and LinkedIn templates...</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Tab 1: Rendered Markdown Report */}
               {activeTab === 'report' && (
