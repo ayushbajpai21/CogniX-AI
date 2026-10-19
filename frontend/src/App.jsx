@@ -144,12 +144,13 @@ export default function App() {
             </div>
           )}
 
-          {/* Modular Tabs Container (Live Jobs, Skill Gaps, Outreach Messages, Job Report, Profile Review, Sources) */}
-          {(research.finalReport || research.isRunning || research.liveJobs.length > 0) && (
+          {/* Modular Tabs Container (Live Jobs, Skill Gaps, Outreach Messages, Job Report, Profile Review, Nearby Companies) */}
+          {(research.finalReport || research.isRunning || research.liveJobs.length > 0 || research.nearbyCompanies.length > 0) && (
             <TabsContainer
               activeTab={research.activeTab}
               setActiveTab={research.setActiveTab}
               liveJobs={research.liveJobs}
+              companies={research.nearbyCompanies}
               atsGaps={research.atsGaps}
               starRewrites={research.starRewrites}
               outreach={research.outreach}

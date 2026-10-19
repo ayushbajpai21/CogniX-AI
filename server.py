@@ -18,7 +18,7 @@ from agents import (
     outreach_node,
     dossier_synthesizer_node
 )
-from tools import search_live_jobs, scrape_url
+from tools import search_live_jobs, scrape_url, get_nearby_companies
 
 load_dotenv()
 
@@ -143,10 +143,12 @@ def run_research(req: ResearchRequest):
     }
 
     final_state = career_agent_graph.invoke(initial_state)
+    companies = get_nearby_companies(final_state.get("target_role", topic))
 
     # Format response compatible with frontend
     return {
         "live_jobs": final_state.get("live_jobs", []),
+        "nearby_companies": companies,
         "ats_gap_analysis": final_state.get("ats_gap_analysis", {}),
         "star_rewrites": final_state.get("star_rewrites", []),
         "outreach": final_state.get("outreach", {}),
@@ -177,6 +179,7 @@ async def stream_research(topic: str, context: Optional[str] = "", doc_id: Optio
             "target_role": topic,
             "resume_text": context or "",
             "live_jobs": [],
+            "nearby_companies": [],
             "ats_gap_analysis": {},
             "star_rewrites": [],
             "outreach": {},
@@ -186,11 +189,11 @@ async def stream_research(topic: str, context: Optional[str] = "", doc_id: Optio
         }
 
         try:
-            # ── AGENT 1: Job Scout Agent (Direct Apply Links) ──
+            # ── AGENT 1: Job Scout Agent (Direct Apply Links & Nearby Companies) ──
             yield sse("progress", {
                 "step": "search",
                 "status": "running",
-                "message": f"Scout Agent: Aggregating live openings with direct apply links for '{topic}'..."
+                "message": f"Scout Agent: Aggregating live openings & tech hubs for '{topic}'..."
             })
             await asyncio.sleep(0.05)
 
@@ -198,14 +201,19 @@ async def stream_research(topic: str, context: Optional[str] = "", doc_id: Optio
             state["live_jobs"] = scout_res.get("live_jobs", [])
             state["target_role"] = scout_res.get("target_role", topic)
 
+            # Retrieve nearby tech companies with Google Maps links
+            companies = get_nearby_companies(state["target_role"])
+            state["nearby_companies"] = companies
+
             jobs_summary = f"Discovered {len(state['live_jobs'])} verified live openings across Remotive, LinkedIn, and Greenhouse."
             state["search_results"] = jobs_summary
 
             yield sse("jobs_update", {"jobs": state["live_jobs"]})
+            yield sse("companies_update", {"companies": state["nearby_companies"]})
             yield sse("progress", {
                 "step": "search",
                 "status": "done",
-                "message": f"Found {len(state['live_jobs'])} live openings with direct apply links.",
+                "message": f"Found {len(state['live_jobs'])} live openings & {len(state['nearby_companies'])} nearby tech hubs.",
                 "data": json.dumps(state["live_jobs"][:3])
             })
 
@@ -240,26 +248,18 @@ async def stream_research(topic: str, context: Optional[str] = "", doc_id: Optio
             state["star_rewrites"] = star_res.get("star_rewrites", [])
 
             yield sse("rewrites_update", {"rewrites": state["star_rewrites"]})
-
-            # Also run synthesis
-            dossier_res = await asyncio.to_thread(dossier_synthesizer_node, state)
-            state["dossier"] = dossier_res.get("dossier", "")
-            state["report"] = state["dossier"]
-            state["critic_score"] = dossier_res.get("critic_score", 8.8)
-            state["critic_feedback"] = dossier_res.get("critic_feedback", "")
-
             yield sse("progress", {
                 "step": "writer",
                 "status": "done",
-                "message": f"Generated {len(state['star_rewrites'])} 1-click STAR project rewrites & complete dossier.",
-                "data": state["report"]
+                "message": f"Generated {len(state['star_rewrites'])} 1-click STAR project rewrites.",
+                "data": json.dumps(state["star_rewrites"])
             })
 
             # ── AGENT 4: Cold Outreach & Pitch Agent ──
             yield sse("progress", {
                 "step": "critic",
                 "status": "running",
-                "message": "Outreach Agent: Synthesizing ready-to-send Cold Email & LinkedIn InMail..."
+                "message": "Outreach Agent: Synthesizing 6 ready-to-send message styles & Job Report..."
             })
             await asyncio.sleep(0.05)
 
@@ -267,16 +267,25 @@ async def stream_research(topic: str, context: Optional[str] = "", doc_id: Optio
             state["outreach"] = outreach_res.get("outreach", {})
 
             yield sse("outreach_update", {"outreach": state["outreach"]})
+
+            # Compile complete Job Report AFTER outreach is fully populated
+            dossier_res = await asyncio.to_thread(dossier_synthesizer_node, state)
+            state["dossier"] = dossier_res.get("dossier", "")
+            state["report"] = state["dossier"]
+            state["critic_score"] = dossier_res.get("critic_score", 8.8)
+            state["critic_feedback"] = dossier_res.get("critic_feedback", "")
+
             yield sse("progress", {
                 "step": "critic",
                 "status": "done",
-                "message": "Cold Email & Recruiter InMail ready to copy-paste.",
+                "message": "6 outreach styles & complete Job Report ready.",
                 "data": state["critic_feedback"]
             })
 
             # ── Complete Event with Full LangGraph State ──
             yield sse("complete", {
                 "live_jobs": state["live_jobs"],
+                "nearby_companies": state["nearby_companies"],
                 "ats_gap_analysis": state["ats_gap_analysis"],
                 "star_rewrites": state["star_rewrites"],
                 "outreach": state["outreach"],

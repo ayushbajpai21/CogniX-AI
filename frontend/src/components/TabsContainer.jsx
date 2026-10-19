@@ -1,11 +1,10 @@
-import React from 'react';
 import {
   Briefcase,
   Target,
   Mail,
   FileText,
   ShieldCheck,
-  BookOpen,
+  MapPin,
   Copy,
   Check,
   Download
@@ -16,12 +15,13 @@ import AtsGapsTab from './tabs/AtsGapsTab';
 import OutreachTab from './tabs/OutreachTab';
 import DossierTab from './tabs/DossierTab';
 import AuditorTab from './tabs/AuditorTab';
-import EvidenceTab from './tabs/EvidenceTab';
+import CompanyMapTab from './tabs/CompanyMapTab';
 
 export default function TabsContainer({
   activeTab,
   setActiveTab,
   liveJobs,
+  companies = [],
   atsGaps,
   starRewrites,
   outreach,
@@ -134,15 +134,20 @@ export default function TabsContainer({
           </button>
 
           <button
-            onClick={() => setActiveTab('sources')}
+            onClick={() => setActiveTab('companies')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'sources'
+              activeTab === 'companies'
                 ? 'bg-cyan-500 text-black font-semibold'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Sources & Links</span>
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Nearby Companies</span>
+            {companies.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-black/20 text-current">
+                {companies.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -221,10 +226,9 @@ export default function TabsContainer({
         />
       )}
 
-      {activeTab === 'sources' && (
-        <EvidenceTab
-          searchUrls={searchUrls}
-          steps={steps}
+      {activeTab === 'companies' && (
+        <CompanyMapTab
+          companies={companies}
         />
       )}
     </div>

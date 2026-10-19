@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, START, END
 
-from tools import search_live_jobs, scrape_url
+from tools import search_live_jobs, scrape_url, detect_location_and_role
 
 load_dotenv()
 
@@ -45,22 +45,25 @@ class CareerAgentState(TypedDict):
 # ── Node 1: Job Scout Agent ──
 def job_scout_node(state: CareerAgentState) -> Dict[str, Any]:
     """Autonomous Scout: Discovers real, live job postings with verified direct apply URLs."""
-    query = state.get("target_role") or state.get("topic") or "AI Engineer"
+    raw_query = state.get("target_role") or state.get("topic") or "Full-Stack Software Developer"
     resume = state.get("resume_text", "")
 
-    # If user provided a resume without specific role, deduce role
-    if len(resume) > 50 and not state.get("target_role"):
-        if "mern" in resume.lower():
-            query = "MERN Stack Developer"
-        elif "frontend" in resume.lower() or "react" in resume.lower():
-            query = "Frontend React Developer"
-        elif "full stack" in resume.lower() or "fullstack" in resume.lower():
-            query = "Full Stack Engineer"
-        elif "data" in resume.lower() or "machine learning" in resume.lower() or "ai" in resume.lower():
-            query = "AI Machine Learning Engineer"
+    # Clean conversational phrases like "find jobs in noida area according my skills"
+    _, _, clean_role = detect_location_and_role(raw_query)
 
-    jobs = search_live_jobs(query, max_jobs=8)
-    return {"live_jobs": jobs, "target_role": query}
+    # If user provided a resume without specific role, deduce role
+    if len(resume) > 50 and (not clean_role or clean_role in ["Software Developer", "Full-Stack Software Developer"]):
+        if "mern" in resume.lower():
+            clean_role = "MERN Stack Developer"
+        elif "frontend" in resume.lower() or "react" in resume.lower():
+            clean_role = "Frontend React Developer"
+        elif "full stack" in resume.lower() or "fullstack" in resume.lower():
+            clean_role = "Full Stack Engineer"
+        elif "data" in resume.lower() or "machine learning" in resume.lower() or "ai" in resume.lower():
+            clean_role = "AI Machine Learning Engineer"
+
+    jobs = search_live_jobs(raw_query, max_jobs=8)
+    return {"live_jobs": jobs, "target_role": clean_role}
 
 
 # ── Node 2: ATS Gap Analyzer Agent ──
@@ -194,24 +197,32 @@ def star_rewriter_node(state: CareerAgentState) -> Dict[str, Any]:
     return {"star_rewrites": rewrites}
 
 
-# ── Node 4: Outreach & Cold Pitch Agent (With 2 Variations: Professional vs Casual) ──
+# ── Node 4: Outreach & Cold Pitch Agent (With 6 Distinct Outreach Styles) ──
 outreach_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are an expert career coach who writes high-converting cold emails and recruiter messages.
-Use natural, conversational English that is polite, direct, and simple to read.
-Generate 2 versions:
-1. Professional Version (Standard, polite, structured)
-2. Casual & Direct Version (Shorter, friendly, high energy — great for startup founders and tech leads)
+    ("system", """You are an expert career strategist who crafts high-converting cold outreach messages for software engineers.
+Write simple, direct, human-sounding English without buzzwords.
+Generate customized outreach versions for the candidate:
+1. Professional Pitch (Formal, structured, best for Enterprise MNCs & HR)
+2. Startup Founder Pitch (Casual, high-energy, direct for founders & CTOs)
+3. Fresher Pitch (Enthusiastic, humble, fast learner for junior/graduate roles)
+4. Technical Architecture Pitch (Deep-dive into stack, APIs, and performance for Tech Leads)
+5. Post-Application Follow-up (Polite check-in 3-5 days after submitting portal application)
+6. LinkedIn InMail (<300 characters, high conversion)
 
 Output STRICT JSON with this schema:
 {{
-  "cold_email_subject": "Application: [Role] — [Key Skill / Project Highlight]",
-  "cold_email_body": "Hi [Hiring Manager Name],\\n\\nI came across the [Role] opening at [Company Name]...\\n\\nBest regards,\\n[Your Name]\\n[LinkedIn / Portfolio Link]",
-  "cold_email_casual_subject": "Quick note regarding [Role] opening at [Company Name]",
-  "cold_email_casual_body": "Hi [Name],\\n\\nHope you're having a great week! I've been following [Company Name]'s tech updates...\\n\\nCheers,\\n[Your Name]",
-  "linkedin_dm": "Hi [Name], I noticed you lead hiring for [Role] at [Company]. I recently built a full-stack project in [Key Skills]. Would love to connect and share my work!",
-  "linkedin_dm_casual": "Hi [Name], love what the team is building at [Company]! I specialize in [Key Skills]. Would love to connect and share a quick link to my portfolio.",
-  "quick_cover_note": "Dedicated software developer with hands-on experience building full-stack web apps and modern APIs. Excited to contribute immediately to the team.",
-  "quick_cover_note_casual": "Passionate developer skilled in React, Node.js, and modern APIs. Ready to hit the ground running and build great products with the team."
+  "prof_subject": "Application: [Role] — [Your Name]",
+  "prof_body": "Dear [Hiring Manager Name],\\n\\nI am writing to express my strong interest in the [Role] position at [Company Name]...",
+  "startup_subject": "Quick note regarding [Role] opening at [Company Name]",
+  "startup_body": "Hi [Founder / Tech Lead Name],\\n\\nHope you're having a great week! I've been following [Company Name]'s products...",
+  "fresher_subject": "Aspiring [Role] | Enthusiastic Early-Career Developer for [Company Name]",
+  "fresher_body": "Dear [Hiring Team / Recruiter Name],\\n\\nI am a passionate software developer actively seeking an entry-level [Role] opening at [Company Name]...",
+  "tech_subject": "[Role] Candidate: Technical architecture & live project demo",
+  "tech_body": "Hi [Engineering Lead Name],\\n\\nI wanted to reach out regarding the [Role] role at [Company Name]...",
+  "followup_subject": "Following up on application for [Role] — [Your Name]",
+  "followup_body": "Hi [Hiring Manager / Recruiter Name],\\n\\nI recently submitted my application for the [Role] position via your careers portal...",
+  "linkedin_dm": "Hi [Name], I noticed the [Role] opening at [Company]. I specialize in full-stack web apps and clean APIs. Would love to connect and share a 2-min demo of my work!",
+  "quick_cover_note": "Dedicated software developer with hands-on experience building full-stack applications and modern APIs. Excited to contribute immediately."
 }}
 Return ONLY valid JSON."""),
     ("human", """Target Role: {role}
@@ -223,7 +234,7 @@ Candidate Background: {resume}
 outreach_chain = outreach_prompt | agent_llm | StrOutputParser()
 
 def outreach_node(state: CareerAgentState) -> Dict[str, Any]:
-    """Generates ready-to-send Cold Emails and LinkedIn DMs with 2 selectable variations."""
+    """Generates ready-to-send outreach messages across 6 distinct selectable variations."""
     role = state.get("target_role", "Software Engineer")
     jobs = state.get("live_jobs", [])
     companies = ", ".join([j["company"] for j in jobs[:3]]) if jobs else "Top Tech Companies"
@@ -238,18 +249,113 @@ def outreach_node(state: CareerAgentState) -> Dict[str, Any]:
             data = json.loads(raw_res)
     except Exception as e:
         print(f"[Warning] Outreach JSON parse error: {e}")
-        data = {
-            "cold_email_subject": f"Application: {role} — Full-Stack Developer",
-            "cold_email_body": "Hi [Hiring Manager Name],\n\nI noticed the opening at [Company Name] and was very impressed by your engineering focus.\n\nRecently, I built a high-performance web platform featuring modular REST APIs, real-time streaming, and responsive UI design.\n\nI would welcome 10 minutes to discuss how my hands-on technical skills can support your development goals.\n\nBest regards,\n[Your Name]\n[LinkedIn / GitHub URL]",
-            "cold_email_casual_subject": f"Quick note regarding {role} opening at [Company Name]",
-            "cold_email_casual_body": "Hi [Name],\n\nHope you're having a productive week! I love what your team is building at [Company Name].\n\nI recently developed a full-stack platform with sub-second API speeds and modern web architecture. I'd love to share my portfolio if you have 5 minutes.\n\nCheers,\n[Your Name]\n[Portfolio URL]",
-            "linkedin_dm": f"Hi [Name], I noticed the {role} opening at [Company]. I specialize in full-stack web development and clean API design. Would love to connect and share my portfolio!",
-            "linkedin_dm_casual": f"Hi [Name], big fan of [Company]'s work! I build full-stack web applications with modern tech. Would love to connect regarding current openings.",
-            "quick_cover_note": f"Dedicated {role} with strong hands-on experience in full-stack architecture, clean coding practices, and modern databases. Excited to contribute immediately.",
-            "quick_cover_note_casual": f"Passionate {role} ready to hit the ground running. Skilled in building reliable, scalable web applications."
-        }
+        data = {}
 
-    return {"outreach": data}
+    # Define 6 distinct templates with verified fallbacks
+    templates = [
+        {
+            "id": "professional",
+            "name": "Professional & Formal",
+            "badge": "MNC & Corporate",
+            "best_for": "Enterprise MNCs, Corporate Recruiters, and Traditional HR Portals.",
+            "subject": data.get("prof_subject") or f"Application: {role} - [Your Name]",
+            "body": data.get("prof_body") or (
+                f"Dear [Hiring Manager Name],\n\n"
+                f"I am writing to express my strong interest in the {role} position at [Company Name]. "
+                f"With hands-on experience designing end-to-end web applications, building performant REST APIs, "
+                f"and writing clean, maintainable code, I am confident in my ability to deliver immediate value to your engineering team.\n\n"
+                f"Recently, I engineered a high-throughput platform that reduced API response latency by 45% and maintained strict reliability under concurrent load. "
+                f"My focus has always been on rigorous testing, modular codebase design, and seamless cross-functional collaboration.\n\n"
+                f"I would welcome the opportunity to speak with you briefly about how my skill set aligns with [Company Name]'s upcoming technical roadmap.\n\n"
+                f"Thank you for your time and consideration.\n\n"
+                f"Sincerely,\n[Your Name]\n[LinkedIn Profile] | [GitHub Profile]"
+            )
+        },
+        {
+            "id": "startup",
+            "name": "Startup & Founder Pitch",
+            "badge": "Startups & CTOs",
+            "best_for": "Early-Stage & Unicorn Startups, Founders, and CTOs who value high agency.",
+            "subject": data.get("startup_subject") or f"Quick note regarding {role} opening at [Company Name]",
+            "body": data.get("startup_body") or (
+                f"Hi [Founder / Tech Lead Name],\n\n"
+                f"Hope you're having an awesome week! I've been closely tracking what [Company Name] is building, and I love the speed at which your team is shipping product.\n\n"
+                f"I specialize in {role} roles with a strong bias for action. Recently, I built an end-to-end full-stack app featuring sub-second API speeds, real-time streaming, and responsive UI from scratch.\n\n"
+                f"I thrive in fast-paced environments where engineers own problems from idea to deployment. If you have 5 minutes this week, I'd love to share a quick 2-minute demo of what I've built.\n\n"
+                f"Cheers,\n[Your Name]\n[Portfolio / Live Demo Link]"
+            )
+        },
+        {
+            "id": "fresher",
+            "name": "Fresher / Fast Learner",
+            "badge": "Freshers & Trainees",
+            "best_for": "College Graduates, Freshers (0-1 yr), Trainees, and Career Switchers.",
+            "subject": data.get("fresher_subject") or f"Aspiring {role} | Enthusiastic Early-Career Developer for [Company Name]",
+            "body": data.get("fresher_body") or (
+                f"Dear [Hiring Team / Recruiter Name],\n\n"
+                f"I am an enthusiastic software developer actively seeking an entry-level {role} opening at [Company Name].\n\n"
+                f"While an early-career engineer, I have dedicated substantial time to building complete, production-grade projects using modern technologies including React, Node.js, and modern databases. I pride myself on being a fast learner who rapidly absorbs new codebases, learns team standards, and tackles challenging technical problems.\n\n"
+                f"I am eager to contribute energy, solid computer science fundamentals, and strong work ethic to [Company Name]'s engineering division.\n\n"
+                f"I would be grateful for a chance to discuss any junior or entry-level opportunities on your team.\n\n"
+                f"Best regards,\n[Your Name]\n[GitHub / Portfolio Link]"
+            )
+        },
+        {
+            "id": "technical",
+            "name": "Technical Architecture",
+            "badge": "Tech Leads & EMs",
+            "best_for": "Engineering Managers, Staff Engineers, and Senior Tech Leads.",
+            "subject": data.get("tech_subject") or f"{role} Candidate: Technical architecture & live project demo",
+            "body": data.get("tech_body") or (
+                f"Hi [Engineering Lead Name],\n\n"
+                f"I wanted to reach out regarding the {role} role at [Company Name]. Rather than just sending a resume, I thought you might appreciate a quick technical overview of my recent work:\n\n"
+                f"• Architecture: Built a full-stack system utilizing modular RESTful endpoints, JWT authentication, and optimized state management.\n"
+                f"• Performance: Implemented database indexing and query caching, decreasing average page load times by over 40%.\n"
+                f"• Reliability: Applied async event handling and containerized services for zero-friction local and cloud deployments.\n\n"
+                f"You can inspect the live codebase and deployment here: [GitHub Repository Link]\n\n"
+                f"I'd enjoy a short technical conversation if you're exploring additions to your engineering squad.\n\n"
+                f"Best,\n[Your Name]"
+            )
+        },
+        {
+            "id": "followup",
+            "name": "Post-Application Follow-Up",
+            "badge": "Application Check-In",
+            "best_for": "Send 3 to 5 business days after applying on LinkedIn, Naukri, or Careers Portal.",
+            "subject": data.get("followup_subject") or f"Follow-up on application for {role} - [Your Name]",
+            "body": data.get("followup_body") or (
+                f"Hi [Hiring Manager / Recruiter Name],\n\n"
+                f"I recently submitted my application for the {role} position via your careers portal (Ref: [Job ID / Portal Name]).\n\n"
+                f"Given [Company Name]'s strong engineering work in this domain, I wanted to follow up directly to reiterate my enthusiasm. My background in building responsive web applications and reliable backend microservices matches your posted requirements closely.\n\n"
+                f"I have attached my updated resume and would love to answer any preliminary questions your team might have.\n\n"
+                f"Thank you for your time,\n[Your Name]\n[Phone Number] | [LinkedIn Profile]"
+            )
+        },
+        {
+            "id": "linkedin_dm",
+            "name": "Recruiter LinkedIn InMail",
+            "badge": "LinkedIn InMail (<300 chars)",
+            "best_for": "Short, high-conversion message under 300 characters for LinkedIn connections or InMail.",
+            "subject": "LinkedIn Direct Message",
+            "body": data.get("linkedin_dm") or (
+                f"Hi [Name], I noticed you're hiring for {role} at [Company]. I specialize in full-stack web development and scalable APIs. Would love to connect and share a 2-minute demo of my recent work!"
+            )
+        }
+    ]
+
+    outreach_payload = {
+        "templates": templates,
+        "cold_email_subject": templates[0]["subject"],
+        "cold_email_body": templates[0]["body"],
+        "cold_email_casual_subject": templates[1]["subject"],
+        "cold_email_casual_body": templates[1]["body"],
+        "linkedin_dm": templates[5]["body"],
+        "linkedin_dm_casual": templates[5]["body"],
+        "quick_cover_note": data.get("quick_cover_note") or f"Dedicated {role} with strong hands-on experience in full-stack architecture, clean coding practices, and modern databases. Excited to contribute immediately.",
+        "quick_cover_note_casual": f"Passionate {role} ready to hit the ground running. Skilled in building reliable, scalable web applications."
+    }
+
+    return {"outreach": outreach_payload}
 
 
 # ── Node 5: Job & Career Report Synthesizer ──
@@ -297,7 +403,21 @@ def dossier_synthesizer_node(state: CareerAgentState) -> Dict[str, Any]:
         )
     star_markdown = "\n".join(star_sections)
 
-    # 4. Assemble the complete Job Report (Clean, simple, professional language)
+    # 4. Resolve outreach subject and body safely so Section 4 is NEVER blank
+    email_sub = outreach.get("cold_email_subject") or f"Application: {role} - [Your Name]"
+    email_body = outreach.get("cold_email_body") or (
+        f"Dear [Hiring Manager Name],\n\n"
+        f"I am writing to express my strong interest in the {role} position at [Company Name]. "
+        f"With hands-on experience building full-stack web applications and robust APIs, "
+        f"I am confident in my ability to deliver immediate value to your team.\n\n"
+        f"Best regards,\n[Your Name]\n[LinkedIn Profile]"
+    )
+    linkedin_msg = outreach.get("linkedin_dm") or (
+        f"Hi [Name], I noticed you lead hiring for {role} at [Company]. "
+        f"I build high-performance web apps and modern APIs. Would love to connect and share a quick 2-minute demo of my work!"
+    )
+
+    # 5. Assemble the complete Job Report (Clean, simple, professional language)
     report = f"""# Job & Career Report: {role}
 
 ## 1. Verified Live Openings with Direct Apply Links
@@ -325,17 +445,19 @@ Use these pre-formatted, metric-driven points on your resume:
 
 ---
 
-## 4. Ready-to-Send Outreach Message
+## 4. Ready-to-Send Outreach Messages
 
-### Cold Email to Hiring Manager:
-**Subject:** {outreach.get('cold_email_subject', f'Application: {role}')}
+### Primary Cold Email (Professional Pitch):
+**Subject:** {email_sub}
 
 ```text
-{outreach.get('cold_email_body', '')}
+{email_body}
 ```
 
 ### Recruiter LinkedIn Message (Short & Direct):
-> "{outreach.get('linkedin_dm', '')}"
+> "{linkedin_msg}"
+
+*(Tip: You can switch between 6 specialized outreach styles—including Startup Founder, Fresher Pitch, and Tech Architecture—in the Outreach Messages tab)*
 
 ---
 

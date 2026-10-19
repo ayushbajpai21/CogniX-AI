@@ -14,6 +14,7 @@ export function useCareerResearch() {
 
   // Live Career & Job States
   const [liveJobs, setLiveJobs] = useState(() => savedActive?.liveJobs || []);
+  const [nearbyCompanies, setNearbyCompanies] = useState(() => savedActive?.nearbyCompanies || []);
   const [atsGaps, setAtsGaps] = useState(() => savedActive?.atsGaps || null);
   const [starRewrites, setStarRewrites] = useState(() => savedActive?.starRewrites || []);
   const [outreach, setOutreach] = useState(() => savedActive?.outreach || null);
@@ -90,7 +91,7 @@ export function useCareerResearch() {
   // Save active work to localStorage
   useEffect(() => {
     try {
-      if (activeInquiry || finalReport || attachedFile || liveJobs.length > 0) {
+      if (activeInquiry || finalReport || attachedFile || liveJobs.length > 0 || nearbyCompanies.length > 0) {
         localStorage.setItem(
           'cognix_active_work',
           JSON.stringify({
@@ -98,6 +99,7 @@ export function useCareerResearch() {
             finalReport,
             criticFeedback,
             liveJobs,
+            nearbyCompanies,
             atsGaps,
             starRewrites,
             outreach,
@@ -114,7 +116,7 @@ export function useCareerResearch() {
     } catch (e) {
       console.error('Failed to save active work', e);
     }
-  }, [activeInquiry, finalReport, criticFeedback, liveJobs, atsGaps, starRewrites, outreach, steps, attachedFile, fileContext, activeTab, researchMode]);
+  }, [activeInquiry, finalReport, criticFeedback, liveJobs, nearbyCompanies, atsGaps, starRewrites, outreach, steps, attachedFile, fileContext, activeTab, researchMode]);
 
   // Real PDF / Document Parser via Backend
   const handleFileUpload = async (e) => {
@@ -203,6 +205,7 @@ export function useCareerResearch() {
     setFinalReport('');
     setCriticFeedback('');
     setLiveJobs([]);
+    setNearbyCompanies([]);
     setAtsGaps(null);
     setStarRewrites([]);
     setOutreach(null);
@@ -223,6 +226,7 @@ export function useCareerResearch() {
     setFinalReport(item.report);
     setCriticFeedback(item.feedback);
     setLiveJobs(item.live_jobs || []);
+    setNearbyCompanies(item.nearby_companies || []);
     setAtsGaps(item.ats_gap_analysis || null);
     setStarRewrites(item.star_rewrites || []);
     setOutreach(item.outreach || null);
@@ -259,6 +263,7 @@ export function useCareerResearch() {
     setFinalReport('');
     setCriticFeedback('');
     setLiveJobs([]);
+    setNearbyCompanies([]);
     setAtsGaps(null);
     setStarRewrites([]);
     setOutreach(null);
@@ -266,7 +271,7 @@ export function useCareerResearch() {
     setActiveTab('jobs');
 
     setSteps({
-      search: { status: 'running', data: null, message: 'Job Scout: Finding verified live jobs...' },
+      search: { status: 'running', data: null, message: 'Job Scout: Finding verified live jobs & tech hubs...' },
       reader: { status: 'waiting', data: null, message: 'Skill Analyzer on standby' },
       writer: { status: 'waiting', data: null, message: 'Project Rewriter on standby' },
       critic: { status: 'waiting', data: null, message: 'Outreach Assistant on standby' },
@@ -288,6 +293,15 @@ export function useCareerResearch() {
           if (payload.jobs) {
             setLiveJobs(payload.jobs);
             setActiveTab('jobs');
+          }
+        } catch (err) {}
+      });
+
+      eventSource.addEventListener('companies_update', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.companies) {
+            setNearbyCompanies(payload.companies);
           }
         } catch (err) {}
       });
@@ -351,6 +365,7 @@ export function useCareerResearch() {
         if (fullData.report) setFinalReport(fullData.report);
         if (fullData.feedback) setCriticFeedback(fullData.feedback);
         if (fullData.live_jobs) setLiveJobs(fullData.live_jobs);
+        if (fullData.nearby_companies) setNearbyCompanies(fullData.nearby_companies);
         if (fullData.ats_gap_analysis) setAtsGaps(fullData.ats_gap_analysis);
         if (fullData.star_rewrites) setStarRewrites(fullData.star_rewrites);
         if (fullData.outreach) setOutreach(fullData.outreach);
@@ -366,6 +381,7 @@ export function useCareerResearch() {
           report: fullData.report,
           feedback: fullData.feedback,
           live_jobs: fullData.live_jobs || [],
+          nearby_companies: fullData.nearby_companies || [],
           ats_gap_analysis: fullData.ats_gap_analysis || null,
           star_rewrites: fullData.star_rewrites || [],
           outreach: fullData.outreach || null,
@@ -417,6 +433,8 @@ export function useCareerResearch() {
     showHowItWorks,
     setShowHowItWorks,
     liveJobs,
+    nearbyCompanies,
+    setNearbyCompanies,
     atsGaps,
     starRewrites,
     outreach,
