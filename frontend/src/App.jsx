@@ -1,225 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Search,
-  BookOpen,
+  Briefcase,
+  Target,
+  Sparkles,
+  Mail,
   PenTool,
-  CheckCircle2,
+  ShieldCheck,
+  BookOpen,
   Copy,
   Check,
   Download,
-  ShieldCheck,
-  ExternalLink,
-  RefreshCw,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  Trash2,
-  FileText,
-  Upload,
-  X,
-  Lock,
-  ChevronDown,
-  ChevronUp,
-  ChevronRight,
-  Sparkles,
-  ArrowRight,
-  Menu,
-  Clock,
-  Layers,
-  Cpu,
-  FileUp,
-  TrendingUp,
-  AlertTriangle,
-  Award,
-  Zap,
-  Target,
-  DollarSign,
-  CheckCircle,
-  Calendar,
-  Briefcase,
-  Mail,
-  Send,
-  MessageSquare
+  AlertTriangle
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+
 import ParticleTerrain from './components/ParticleTerrain';
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import PromptBar from './components/PromptBar';
+import AgentPipeline from './components/AgentPipeline';
 
-// Futuristic Cybernetic AI Agent Logo (CogniX AI Neural Nexus)
-function BrandLogo({ className = "w-9 h-9" }) {
-  return (
-    <div className={`relative ${className} shrink-0`}>
-      <svg viewBox="0 0 100 100" fill="none" className="w-full h-full drop-shadow-[0_2px_8px_rgba(34,211,238,0.25)]">
-        <defs>
-          <linearGradient id="cyberCore" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="50%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-          <linearGradient id="cyberShield" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1e1b4b" />
-            <stop offset="100%" stopColor="#09090b" />
-          </linearGradient>
-          <linearGradient id="glowCyan" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#38bdf8" />
-            <stop offset="100%" stopColor="#0284c7" />
-          </linearGradient>
-          <linearGradient id="glowAmber" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fbbf24" />
-            <stop offset="100%" stopColor="#d97706" />
-          </linearGradient>
-        </defs>
+import LiveJobsTab from './components/tabs/LiveJobsTab';
+import AtsGapsTab from './components/tabs/AtsGapsTab';
+import OutreachTab from './components/tabs/OutreachTab';
+import DossierTab from './components/tabs/DossierTab';
+import AuditorTab from './components/tabs/AuditorTab';
+import EvidenceTab from './components/tabs/EvidenceTab';
 
-        {/* Outer Hexagonal Cyber Shield */}
-        <polygon
-          points="50,6 88,28 88,72 50,94 12,72 12,28"
-          fill="url(#cyberShield)"
-          stroke="#38bdf8"
-          strokeWidth="2.5"
-          strokeOpacity="0.45"
-        />
-
-        {/* Inner High-Tech Energy Grid */}
-        <polygon
-          points="50,16 80,33 80,67 50,84 20,67 20,33"
-          stroke="url(#cyberCore)"
-          strokeWidth="1.5"
-          strokeDasharray="4 2"
-          strokeOpacity="0.75"
-        />
-
-        {/* Central Multi-Agent Neural Nexus ('X' Core) */}
-        <path
-          d="M34 32 L66 68 M66 32 L34 68"
-          stroke="url(#cyberCore)"
-          strokeWidth="5.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M50 20 L50 40 M50 60 L50 80"
-          stroke="#ffffff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeOpacity="0.85"
-        />
-
-        {/* 4 Autonomous Agent Orbit Nodes */}
-        <circle cx="50" cy="18" r="4" fill="url(#glowCyan)" stroke="#ffffff" strokeWidth="1.5" />
-        <circle cx="78" cy="50" r="4" fill="url(#glowAmber)" stroke="#ffffff" strokeWidth="1.5" />
-        <circle cx="50" cy="82" r="4" fill="url(#glowAmber)" stroke="#ffffff" strokeWidth="1.5" />
-        <circle cx="22" cy="50" r="4" fill="url(#glowCyan)" stroke="#ffffff" strokeWidth="1.5" />
-
-        {/* Central Quantum Node */}
-        <circle cx="50" cy="50" r="5" fill="#ffffff" />
-      </svg>
-    </div>
-  );
-}
-
-const SUGGESTED_TOPICS = [
-  "AI & ML Engineer (Fresher / Junior Openings 2026)",
-  "Full Stack Web Developer (0-2 Yrs Remote)",
-  "Data Science & Analytics Internships",
-  "GenAI & Multi-Agent Systems Developer"
-];
-
-const DEFAULT_RESUME_PROMPTS = [
-  "Find Live Openings with Direct Apply Links for My Resume",
-  "Run ATS Gap Analysis & Identify Missing 2026 Keywords",
-  "Generate 1-Click STAR Project Bullets for My Resume",
-  "Draft Ready-to-Send Cold Email & Recruiter LinkedIn DM"
-];
-
-const DEFAULT_NOTES_PROMPTS = [
-  "Extract Key Tech Skills & Find Matching Live Roles",
-  "Generate Technical Interview Q&A with Live Scoring",
-  "Cross-Reference Knowledge with 2026 Industry Hiring State"
-];
-
-function getStoredJson(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function parseCriticFeedback(rawFeedback, rawScore, topic = '', docType = '') {
-  let score = 8.8;
-  if (rawFeedback) {
-    const match = rawFeedback.match(/Score:\s*(\d+(\.\d+)?)\s*\/\s*10/i);
-    if (match) score = parseFloat(match[1]);
-  } else if (rawScore) {
-    score = rawScore;
-  }
-  const scorePercent = Math.min(100, Math.max(10, Math.round(score * 10)));
-
-  // Extract Strengths
-  const strengths = [];
-  if (rawFeedback) {
-    const match = rawFeedback.match(/Strengths:\s*([\s\S]*?)(?=Areas to Improve:|Strategic Verdict:|$)/i);
-    if (match) {
-      match[1].split('\n').forEach((line) => {
-        const clean = line.replace(/^[-*•\d.]+\s*/, '').trim();
-        if (clean && !clean.toLowerCase().includes('(strength')) {
-          strengths.push(clean);
-        }
-      });
-    }
-  }
-
-  // Extract Improvements / Gaps
-  const improvements = [];
-  if (rawFeedback) {
-    const match = rawFeedback.match(/Areas to Improve:\s*([\s\S]*?)(?=Strategic Verdict:|$)/i);
-    if (match) {
-      match[1].split('\n').forEach((line) => {
-        const clean = line.replace(/^[-*•\d.]+\s*/, '').trim();
-        if (clean && !clean.toLowerCase().includes('(critique')) {
-          improvements.push(clean);
-        }
-      });
-    }
-  }
-
-  // Extract Verdict
-  let verdict = '';
-  if (rawFeedback) {
-    const match = rawFeedback.match(/Strategic Verdict:\s*([\s\S]*?)$/i);
-    if (match) {
-      verdict = match[1].replace(/^\([^)]+\)/, '').trim();
-    }
-  }
-
-  // Fallbacks if section was sparse or unstructured
-  if (strengths.length === 0) {
-    strengths.push(
-      'Demonstrated multi-agent architecture and distributed workflow fundamentals',
-      'Direct relevance to 2026 enterprise AI engineering and autonomous tooling',
-      'Structured technical articulation with end-to-end implementation scope'
-    );
-  }
-  if (improvements.length === 0) {
-    improvements.push(
-      'Quantify real-world system latency (p95/p99) and token throughput metrics',
-      'Incorporate production observability and automated evaluation harness (LangSmith/RAGAS)',
-      'Benchmark memory footprint against high-concurrency enterprise workloads'
-    );
-  }
-  if (!verdict) {
-    verdict = 'Profile & dossier demonstrate high technical competence with clear architectural depth. Adding quantitative latency and benchmark metrics will position this in the top 5% of candidate evaluations.';
-  }
-
-  return {
-    score,
-    scorePercent,
-    strengths,
-    improvements,
-    verdict,
-    raw: rawFeedback,
-  };
-}
+import { getStoredJson } from './utils/storage';
+import { extractClickableUrls } from './utils/parsers';
+import { DEFAULT_RESUME_PROMPTS, DEFAULT_NOTES_PROMPTS } from './constants/prompts';
 
 export default function App() {
   const savedActive = getStoredJson('cognix_active_work', null);
@@ -228,8 +37,6 @@ export default function App() {
   const [activeInquiry, setActiveInquiry] = useState(() => savedActive?.activeInquiry || '');
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [starCopied, setStarCopied] = useState(false);
-  const [showRawCritic, setShowRawCritic] = useState(false);
   const [activeTab, setActiveTab] = useState(() => savedActive?.activeTab || 'jobs');
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
@@ -264,10 +71,8 @@ export default function App() {
   const fileInputRef = useRef(null);
   const reportBottomRef = useRef(null);
 
-  // Document Vault (Saved in localStorage so documents don't disappear on refresh!)
+  // Document Vault & History (localStorage persistent)
   const [documentVault, setDocumentVault] = useState(() => getStoredJson('cognix_vault', []));
-
-  // History State
   const [history, setHistory] = useState(() => getStoredJson('cognix_history', []));
 
   // Agent Steps State
@@ -622,18 +427,10 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const name = (activeInquiry || 'cognix_research').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const name = (activeInquiry || 'cognix_career').replace(/[^a-z0-9]/gi, '_').toLowerCase();
     link.download = `${name}_dossier.md`;
     link.click();
     URL.revokeObjectURL(url);
-  };
-
-  const extractClickableUrls = (text) => {
-    if (!text) return [];
-    const urlRegex = /(https?:\/\/[^\s)\]"'>]+)/g;
-    const matches = text.match(urlRegex) || [];
-    const unique = [...new Set(matches.map((u) => u.replace(/[.,;:]+$/, '')))];
-    return unique.filter((u) => u.length > 10);
   };
 
   const getScoreBadge = () => {
@@ -702,639 +499,95 @@ export default function App() {
         className="hidden"
       />
 
-      {/* ── Mobile Backdrop Overlay ── */}
-      {isMobileSidebarOpen && (
-        <div
-          onClick={() => setIsMobileSidebarOpen(false)}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden"
+      {/* Modular Sidebar */}
+      <Sidebar
+        isSidebarExpanded={isSidebarExpanded}
+        setIsSidebarExpanded={setIsSidebarExpanded}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        setIsMobileSidebarOpen={setIsMobileSidebarOpen}
+        onStartNewSession={startNewSession}
+        onTriggerUpload={() => fileInputRef.current?.click()}
+        uploadingFile={uploadingFile}
+        documentVault={documentVault}
+        onSelectVaultDoc={selectVaultDoc}
+        onRemoveVaultDoc={removeVaultDoc}
+        attachedFile={attachedFile}
+        researchMode={researchMode}
+        setResearchMode={setResearchMode}
+        showHowItWorks={showHowItWorks}
+        setShowHowItWorks={setShowHowItWorks}
+        history={history}
+        onLoadFromHistory={loadFromHistory}
+        onDeleteHistoryItem={deleteHistoryItem}
+        onClearAllHistory={clearAllHistory}
+      />
+
+      {/* ── Main View Area ── */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative z-10 overflow-hidden">
+        {/* Top Header Navbar */}
+        <Navbar
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          attachedFile={attachedFile}
+          onDetachFile={detachCurrentFile}
+          researchMode={researchMode}
+          onStartNewSession={startNewSession}
         />
-      )}
 
-      {/* ── Desktop & Mobile Responsive Sidebar ── */}
-      <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 h-full border-r border-zinc-800/80 bg-[#0c0c10]/95 backdrop-blur-md shrink-0 transition-all duration-300 ease-in-out flex flex-col ${
-          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        } ${
-          isSidebarExpanded ? 'w-72 sm:w-80' : 'md:w-[72px] w-72'
-        }`}
-      >
-        {/* Sidebar Header */}
-        <div className="p-3.5 border-b border-zinc-800/80 flex items-center justify-between">
-          <div className="flex items-center gap-3 truncate">
-            <BrandLogo className="w-8 h-8" />
-            {(isSidebarExpanded || isMobileSidebarOpen) && (
+        {/* Dynamic Workspace Container */}
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+          {/* Active Inquiry Header */}
+          {activeInquiry && (
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <div className="truncate">
-                <span className="font-bold text-white text-sm tracking-tight block truncate">
-                  Cogni<span className="text-cyan-400">X</span> <span className="text-amber-500">AI</span>
+                <span className="text-[11px] font-mono uppercase text-cyan-400 font-bold tracking-wider">
+                  Target Role / Candidate Query
                 </span>
-                <p className="text-[10px] text-zinc-500 font-mono truncate">Multi-Agent Intelligence</p>
+                <h2 className="text-base sm:text-xl font-bold text-white truncate tracking-tight">
+                  {activeInquiry}
+                </h2>
               </div>
-            )}
-          </div>
-
-          {/* Sidebar internal toggle button (ONLY button on desktop) */}
-          <div className="flex items-center">
-            <button
-              onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-              className="hidden md:flex p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-              title={isSidebarExpanded ? 'Collapse to Icon Rail' : 'Expand Sidebar'}
-            >
-              {isSidebarExpanded ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-            </button>
-
-            {/* Mobile close button */}
-            <button
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className="md:hidden p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-              title="Close Menu"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Collapsed Rail Mode View (Desktop Only when !isSidebarExpanded) ── */}
-        {!isSidebarExpanded && (
-          <div className="hidden md:flex flex-col items-center justify-between flex-1 py-4 space-y-4">
-            <div className="flex flex-col items-center space-y-3 w-full">
-              {/* New Research Button (Rail) */}
-              <button
-                onClick={startNewSession}
-                className="group relative p-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-90 text-black transition-all active:scale-95 shadow-sm"
-                title="New Research Session"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span className="absolute left-full ml-2.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  New Session
-                </span>
-              </button>
-
-              {/* Upload PDF (Rail) */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingFile}
-                className="group relative p-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-cyan-400 transition-all active:scale-95"
-                title="Upload Document"
-              >
-                {uploadingFile ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-                ) : (
-                  <FileUp className="w-4 h-4" />
-                )}
-                <span className="absolute left-full ml-2.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  Upload PDF / Resume
-                </span>
-              </button>
-
-              {/* Vault count pill (Rail) */}
-              <button
-                onClick={() => setIsSidebarExpanded(true)}
-                className="group relative p-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
-                title="Document Vault"
-              >
-                <Layers className="w-4 h-4" />
-                {documentVault.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 text-black text-[9px] font-bold flex items-center justify-center font-mono">
-                    {documentVault.length}
+              <div className="flex items-center gap-2">
+                {attachedFile && (
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400">
+                    CV: {attachedFile.name}
                   </span>
                 )}
-                <span className="absolute left-full ml-2.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  Document Vault ({documentVault.length})
-                </span>
-              </button>
-
-              {/* History count pill (Rail) */}
-              <button
-                onClick={() => setIsSidebarExpanded(true)}
-                className="group relative p-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
-                title="Past Dossiers"
-              >
-                <Clock className="w-4 h-4" />
-                {history.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-700 text-white text-[9px] font-bold flex items-center justify-center font-mono">
-                    {history.length}
+                {isRunning && (
+                  <span className="px-2.5 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs animate-pulse">
+                    Autonomous Fleet Active
                   </span>
                 )}
-                <span className="absolute left-full ml-2.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  Past Dossiers ({history.length})
-                </span>
-              </button>
-
-              {/* Agent Fleet info (Rail) */}
-              <button
-                onClick={() => setIsSidebarExpanded(true)}
-                className="group relative p-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
-                title="Agent Fleet Info"
-              >
-                <Cpu className="w-4 h-4" />
-                <span className="absolute left-full ml-2.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-white text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  Agent Pipeline (4 Agents)
-                </span>
-              </button>
-            </div>
-
-            {/* Bottom Rail Expand Action */}
-            <div className="flex flex-col items-center space-y-2">
-              <button
-                onClick={() => setIsSidebarExpanded(true)}
-                className="p-2 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-900 transition-colors"
-                title="Expand Sidebar"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <div className="text-[9px] font-mono font-bold text-cyan-400/80 uppercase">
-                {researchMode[0]}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Expanded Full Sidebar Content ── */}
-        {(isSidebarExpanded || isMobileSidebarOpen) && (
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            {/* Primary Action Buttons */}
-            <div className="p-3.5 space-y-2.5 border-b border-zinc-800/80">
-              <button
-                onClick={startNewSession}
-                className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-95 text-black font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                New Research Session
-              </button>
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingFile}
-                className="w-full py-2.5 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-white text-xs flex items-center justify-center gap-2 transition-all group"
-              >
-                {uploadingFile ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                    <span>Extracting PDF Text...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-3.5 h-3.5 text-zinc-400 group-hover:text-cyan-400 transition-colors" />
-                    <span>Upload PDF (Resume / Notes)</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Document Vault Section */}
-            <div className="p-3.5 border-b border-zinc-800/80">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                  Document Vault ({documentVault.length})
-                </span>
-              </div>
-
-              {documentVault.length === 0 ? (
-                <div className="p-3 rounded-lg bg-zinc-950/60 border border-dashed border-zinc-800 text-center">
-                  <FileText className="w-4 h-4 text-zinc-600 mx-auto mb-1" />
-                  <p className="text-[11px] text-zinc-500">No documents in vault.</p>
-                  <p className="text-[10px] text-zinc-600">Upload a resume or notes PDF to attach.</p>
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                  {documentVault.map((doc) => {
-                    const isSelected = attachedFile?.id === doc.id;
-                    return (
-                      <div
-                        key={doc.id}
-                        onClick={() => selectVaultDoc(doc)}
-                        className={`p-2 rounded-lg border text-xs cursor-pointer transition-all flex items-center justify-between gap-2 ${
-                          isSelected
-                            ? 'border-cyan-500/60 bg-cyan-500/10 text-white'
-                            : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-700 text-zinc-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate flex-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase shrink-0 ${
-                            doc.docType === 'resume' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                          }`}>
-                            {doc.docType}
-                          </span>
-                          <span className="truncate text-xs font-medium">{doc.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] text-zinc-500 font-mono">{doc.size}</span>
-                          <button
-                            onClick={(e) => removeVaultDoc(doc.id, e)}
-                            className="p-1 text-zinc-500 hover:text-red-400 rounded transition-colors"
-                            title="Delete document"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Depth Selector */}
-            <div className="p-3.5 border-b border-zinc-800/80">
-              <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block mb-2 font-semibold">
-                Agent Reasoning Depth
-              </span>
-              <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-                {[
-                  { id: 'fast', label: 'Fast Brief' },
-                  { id: 'deep', label: 'Deep Dossier' },
-                  { id: 'academic', label: 'Academic' },
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setResearchMode(m.id)}
-                    className={`py-1 text-[11px] font-medium rounded transition-all ${
-                      researchMode === m.id
-                        ? 'bg-gradient-to-r from-cyan-500 to-amber-500 text-black font-semibold'
-                        : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Agent Fleet Architecture Guide */}
-            <div className="p-3.5 border-b border-zinc-800/80">
-              <button
-                onClick={() => setShowHowItWorks(!showHowItWorks)}
-                className="w-full flex items-center justify-between text-[11px] font-mono text-zinc-400 uppercase tracking-wider hover:text-cyan-400 transition-colors font-semibold"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-                  Agent Architecture
-                </span>
-                {showHowItWorks ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-
-              {showHowItWorks && (
-                <div className="mt-2.5 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] text-zinc-400 space-y-2 font-mono">
-                  <div>
-                    <strong className="text-cyan-400">01 Scout:</strong> Live internet discovery & 2026 standards.
-                  </div>
-                  <div>
-                    <strong className="text-cyan-400">02 Scholar:</strong> DOM text extraction & verification.
-                  </div>
-                  <div>
-                    <strong className="text-amber-400">03 Scribe:</strong> Synthesizes report + uploaded PDF.
-                  </div>
-                  <div>
-                    <strong className="text-amber-400">04 Auditor:</strong> Automated peer review & scoring.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Recent Dossiers History */}
-            <div className="flex-1 p-3.5 space-y-1 overflow-y-auto">
-              <div className="flex items-center justify-between px-1 mb-2">
-                <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                  Recent Dossiers ({history.length})
-                </span>
-                {history.length > 0 && (
-                  <button
-                    onClick={clearAllHistory}
-                    className="text-[10px] text-zinc-500 hover:text-red-400 transition-colors"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-
-              {history.length === 0 ? (
-                <div className="text-center py-6 text-xs text-zinc-600 font-mono">
-                  No previous dossiers saved.
-                </div>
-              ) : (
-                history.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => loadFromHistory(item)}
-                    className="group p-2 rounded-lg border border-transparent hover:border-zinc-800 hover:bg-zinc-900/60 cursor-pointer transition-all flex items-center justify-between gap-2"
-                  >
-                    <div className="truncate flex-1">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        {item.docType && (
-                          <span className="text-[9px] font-mono uppercase text-amber-400 font-bold">
-                            [{item.docType}]
-                          </span>
-                        )}
-                        <p className="text-xs text-zinc-300 font-medium truncate group-hover:text-cyan-400 transition-colors">
-                          {item.topic}
-                        </p>
-                      </div>
-                      <span className="text-[10px] text-zinc-500 font-mono">{item.date}</span>
-                    </div>
-                    <button
-                      onClick={(e) => deleteHistoryItem(item.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded transition-all"
-                      title="Delete item"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </aside>
-
-      {/* ── Main App Container ── */}
-      <div className="flex-1 h-full flex flex-col overflow-hidden bg-[#09090b]/80 relative z-10 backdrop-blur-[0.5px]">
-        {/* Top Minimal Responsive Navbar (NO DUPLICATE ICONS) */}
-        <header className="h-14 border-b border-zinc-800/80 bg-[#0c0c10]/90 backdrop-blur-md shrink-0 flex items-center justify-between px-3 sm:px-6 md:px-8 z-20">
-          <div className="flex items-center gap-2.5 sm:gap-3 truncate">
-            {/* Mobile menu trigger ONLY (hidden on desktop) */}
-            <button
-              onClick={() => setIsMobileSidebarOpen(true)}
-              className="md:hidden p-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-colors"
-              title="Open Navigation Drawer"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-
-            {/* Brand Title (Clean & uncluttered, no redundant icons) */}
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-white text-sm sm:text-base tracking-tight">
-                Cogni<span className="text-cyan-400">X</span> <span className="text-amber-500">AI</span>
-              </span>
-              <span className="text-[11px] font-mono text-zinc-500 hidden sm:inline pl-2 border-l border-zinc-800">
-                Autonomous Multi-Agent Intelligence
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Active Document Pill */}
-            {attachedFile && (
-              <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
-                <FileText className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate max-w-[90px] sm:max-w-[140px]">{attachedFile.name}</span>
-                <button
-                  onClick={detachCurrentFile}
-                  className="hover:text-red-400 ml-0.5"
-                  title="Detach File"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
-
-            <div className="hidden sm:block px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-mono">
-              Depth: <span className="text-cyan-400 font-bold uppercase">{researchMode}</span>
-            </div>
-
-            <button
-              onClick={startNewSession}
-              className="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono transition-colors"
-              title="Reset Workspace"
-            >
-              Clear
-            </button>
-          </div>
-        </header>
-
-        {/* Scrollable Center Workspace */}
-        <main className="flex-1 overflow-y-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 max-w-5xl w-full mx-auto space-y-4 sm:space-y-6">
-          {/* Header & Active Inquiry Card */}
-          <div className="space-y-1">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2 flex-wrap">
-              {activeInquiry ? (
-                <>
-                  <span className="text-zinc-400 font-normal">Active Investigation:</span>
-                  <span className="text-cyan-400 break-words">{activeInquiry}</span>
-                </>
-              ) : (
-                <>
-                  <span>Autonomous Multi-Agent Intelligence</span>
-                </>
-              )}
-            </h1>
-            <p className="text-xs text-zinc-400">
-              Scout, Scholar, Scribe & Auditor agents collaborate to discover, extract, analyze, and review in under 10 seconds.
-            </p>
-          </div>
-
-          {/* ── Main Prompt & Document Integration Workspace ── */}
-          <div className="dark-card p-3 sm:p-4 space-y-3 border-zinc-700/60 bg-[#0d0d12]">
-            {/* If a Document is Attached: Show Attachment Pill & Quick Actions */}
-            {attachedFile ? (
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-zinc-900/90 border border-cyan-500/30">
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-400 text-black uppercase">
-                      {attachedFile.docType}
-                    </span>
-                    <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
-                    <span className="text-xs font-medium text-white truncate max-w-[150px] sm:max-w-xs">
-                      {attachedFile.name}
-                    </span>
-                    <span className="text-[11px] text-zinc-500 font-mono hidden sm:inline">
-                      ({attachedFile.size} • {attachedFile.charCount} chars)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Ready for Agent Analysis
-                    </span>
-                    <button
-                      onClick={detachCurrentFile}
-                      className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-red-400"
-                      title="Detach document"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Instant Quick-Action Analysis Presets for Attached File */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                    <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold tracking-wider">
-                      One-Click Document Actions:
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {(attachedFile.suggestedPrompts || DEFAULT_RESUME_PROMPTS).map((p, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleExecuteResearch(p)}
-                        disabled={isRunning}
-                        className="text-left p-2.5 rounded-lg bg-zinc-950/80 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/50 text-xs text-zinc-300 hover:text-white transition-all flex items-center justify-between group active:scale-[0.99]"
-                      >
-                        <span className="truncate pr-2 font-medium">{p}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-cyan-400 shrink-0 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Custom Search Form */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleExecuteResearch();
-              }}
-              className="relative"
-            >
-              <div className="flex items-center bg-zinc-950 rounded-lg border border-zinc-800 focus-within:border-cyan-500 transition-colors p-1">
-                <Search className="w-4 h-4 text-zinc-400 ml-2.5 sm:ml-3 shrink-0" />
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder={
-                    attachedFile
-                      ? `Ask anything about ${attachedFile.name} (e.g. "Evaluate my fit for Senior AI Engineer")...`
-                      : "Enter research topic, technology, or upload a resume..."
-                  }
-                  disabled={isRunning}
-                  className="w-full px-2.5 sm:px-3 py-2 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-xs sm:text-sm"
-                />
-
-                {!attachedFile && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingFile || isRunning}
-                    className="p-1.5 sm:p-2 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-900 rounded-md transition-colors mr-1 shrink-0"
-                    title="Upload PDF (Resume or Notes)"
-                  >
-                    <Upload className="w-4 h-4" />
-                  </button>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isRunning || !topic.trim()}
-                  className={`px-3 sm:px-4 py-2 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-all shrink-0 ${
-                    isRunning || !topic.trim()
-                      ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-95 text-black active:scale-95 shadow-sm'
-                  }`}
-                >
-                  {isRunning ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span className="hidden sm:inline">Investigating...</span>
-                    </>
-                  ) : (
-                    <span>Execute</span>
-                  )}
-                </button>
-              </div>
-            </form>
-
-            {!attachedFile && (
-              <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase">Suggestions:</span>
-                {SUGGESTED_TOPICS.map((t, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setTopic(t)}
-                    disabled={isRunning}
-                    className="text-[11px] sm:text-xs bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 rounded px-2.5 py-1 transition-all"
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {errorMsg && (
-            <div className="p-3 rounded-lg bg-red-950/30 border border-red-500/30 text-red-300 text-xs">
-              {errorMsg}
             </div>
           )}
 
-          {/* ── 4 Agent Sequential Status Pipeline ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-            {agents.map((agent) => {
-              const Icon = agent.icon;
-              const current = steps[agent.id];
-              const isRunningStep = current.status === 'running';
-              const isDoneStep = current.status === 'done';
-              const isWaitingStep = current.status === 'waiting' || current.status === 'idle';
+          {/* Search & Prompt Action Bar */}
+          <PromptBar
+            topic={topic}
+            setTopic={setTopic}
+            attachedFile={attachedFile}
+            onDetachFile={detachCurrentFile}
+            onExecute={handleExecuteResearch}
+            isRunning={isRunning}
+            uploadingFile={uploadingFile}
+            onTriggerUpload={() => fileInputRef.current?.click()}
+          />
 
-              return (
-                <div
-                  key={agent.id}
-                  className={`dark-card p-3.5 sm:p-4 transition-all ${
-                    isRunningStep
-                      ? 'border-cyan-500/60 bg-[#0f141a]'
-                      : isDoneStep
-                      ? 'border-emerald-500/30 bg-[#0d1410]'
-                      : 'opacity-70'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div
-                      className={`p-1.5 rounded border ${
-                        isRunningStep
-                          ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-400'
-                          : isDoneStep
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-mono text-xs text-zinc-500">{agent.num}</span>
-                  </div>
+          {/* Multi-Agent Orchestration Pipeline */}
+          <AgentPipeline agents={agents} steps={steps} />
 
-                  <h3 className="font-semibold text-white text-xs sm:text-sm mb-0.5">{agent.title}</h3>
-                  <p className="text-[10px] sm:text-[11px] text-zinc-400 mb-2 truncate">{agent.desc}</p>
+          {/* Error Message Toast/Banner */}
+          {errorMsg && (
+            <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-mono flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-                  <div className="p-2 rounded bg-zinc-950 border border-zinc-800/80 text-[11px] font-mono text-zinc-300 min-h-[36px] flex items-center">
-                    <span className="line-clamp-2">{current.message}</span>
-                  </div>
-
-                  <div className="mt-2.5 pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-zinc-500">Status:</span>
-                    {isRunningStep && (
-                      <span className="text-cyan-400 font-bold flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                        RUNNING
-                      </span>
-                    )}
-                    {isDoneStep && (
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        DONE
-                      </span>
-                    )}
-                    {isWaitingStep && (
-                      <span className="text-zinc-500 flex items-center gap-1">
-                        <Lock className="w-2.5 h-2.5" />
-                        LOCKED
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ── Intelligence Dossier Output ── */}
+          {/* Results Card with Modular Tabs */}
           {(finalReport || isRunning || liveJobs.length > 0) && (
             <div className="dark-card overflow-hidden">
-              {/* Tabs Navigation (Responsive Horizontal Scroll) */}
+              {/* Tabs Navigation */}
               <div className="border-b border-zinc-800 px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 bg-[#0d0d12]">
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full">
                   <button
@@ -1440,859 +693,66 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Tab 0: Live Verified Job Openings with Direct Apply Links */}
+              {/* Tab 1: Live Openings with Direct Apply Links */}
               {activeTab === 'jobs' && (
-                <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4 text-cyan-400" />
-                        <h3 className="text-base font-bold text-white tracking-tight">
-                          Verified Live Openings with Direct Apply Links
-                        </h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold">
-                          {liveJobs.length} Live Openings
-                        </span>
-                      </div>
-                      <p className="text-xs text-zinc-400 font-mono mt-1">
-                        Direct career portals, Remotive, and LinkedIn feeds • Zero dead redirects
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono text-zinc-500 uppercase mr-1">Filter:</span>
-                      {['all', 'worldwide', 'direct'].map((f) => (
-                        <button
-                          key={f}
-                          onClick={() => setJobFilter(f)}
-                          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
-                            jobFilter === f ? 'bg-cyan-500 text-black font-bold' : 'bg-zinc-900 text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          {f === 'all' ? 'All Roles' : f === 'worldwide' ? 'Remote / Worldwide' : 'Direct ATS'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {liveJobs.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {liveJobs
-                        .filter((j) => {
-                          if (jobFilter === 'worldwide') return (j.location || '').toLowerCase().includes('worldwide') || (j.location || '').toLowerCase().includes('remote');
-                          if (jobFilter === 'direct') return (j.platform || '').toLowerCase().includes('ats') || (j.platform || '').toLowerCase().includes('direct');
-                          return true;
-                        })
-                        .map((job, idx) => (
-                          <div
-                            key={job.id || idx}
-                            className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800/90 hover:border-cyan-500/50 transition-all flex flex-col justify-between space-y-3 group"
-                          >
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="truncate">
-                                  <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold block">
-                                    {job.company}
-                                  </span>
-                                  <h4 className="text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors leading-snug">
-                                    {job.title}
-                                  </h4>
-                                </div>
-                                <div className="flex flex-col items-end shrink-0 gap-1">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                                    {job.match_score || 92}% Match
-                                  </span>
-                                  <span className="text-[10px] font-mono text-zinc-500">
-                                    {job.platform}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400">
-                                <span>📍 {job.location || 'Remote'}</span>
-                              </div>
-
-                              <p className="text-xs text-zinc-300 line-clamp-3 leading-relaxed font-sans">
-                                {job.snippet}
-                              </p>
-
-                              {job.tags && job.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                  {job.tags.map((t, i) => (
-                                    <span
-                                      key={i}
-                                      className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400"
-                                    >
-                                      {t}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(job.apply_url);
-                                    setCopiedJobIdx(idx);
-                                    setTimeout(() => setCopiedJobIdx(null), 2000);
-                                  }}
-                                  className="p-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-xs flex items-center gap-1 font-mono"
-                                  title="Copy Apply URL"
-                                >
-                                  {copiedJobIdx === idx ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                                  <span className="text-[10px]">Copy Link</span>
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    setActiveTab('outreach');
-                                  }}
-                                  className="p-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-purple-300 transition-colors text-xs flex items-center gap-1 font-mono"
-                                  title="Get Cold Email for this job"
-                                >
-                                  <Mail className="w-3.5 h-3.5 text-purple-400" />
-                                  <span className="text-[10px]">Draft Pitch</span>
-                                </button>
-                              </div>
-
-                              <a
-                                href={job.apply_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-95 text-black font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-                              >
-                                <span>Direct Apply</span>
-                                <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
-                              </a>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
-                      <p className="text-xs font-mono">Job Scout Agent searching live career portals and verified postings...</p>
-                    </div>
-                  )}
-                </div>
+                <LiveJobsTab
+                  liveJobs={liveJobs}
+                  jobFilter={jobFilter}
+                  setJobFilter={setJobFilter}
+                  onGoToOutreach={() => setActiveTab('outreach')}
+                  copiedJobIdx={copiedJobIdx}
+                  setCopiedJobIdx={setCopiedJobIdx}
+                />
               )}
 
-              {/* Tab: ATS Gaps & STAR Bullet Rewrites */}
+              {/* Tab 2: ATS Gaps & STAR Bullets */}
               {activeTab === 'gaps' && (
-                <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                  {atsGaps ? (
-                    <div className="space-y-6">
-                      {/* Top ATS Scorecard Bar */}
-                      <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-zinc-950 via-[#0d141a] to-zinc-950 border border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="p-1.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                              <Target className="w-4 h-4" />
-                            </span>
-                            <h3 className="text-base font-bold text-white tracking-tight">
-                              2026 ATS Match & Keyword Gap Diagnostics
-                            </h3>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold uppercase">
-                              {atsGaps.fit_tier || 'Tier-1 Candidate'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-zinc-400 font-mono">
-                            Evaluated against discovered live job postings and modern hiring algorithms
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold">
-                            <span>ATS MATCH SCORE:</span>
-                            <span className="text-base text-cyan-400">{atsGaps.ats_score || 88}%</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Missing Keywords & Verified Strengths Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Missing Keywords (Critical Fix) */}
-                        <div className="p-4 rounded-xl bg-zinc-950/90 border border-amber-500/30 space-y-3">
-                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                            <span className="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              Missing 2026 In-Demand Keywords (Must Add)
-                            </span>
-                            <span className="text-[10px] font-mono text-zinc-500">Click to Copy</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {(atsGaps.missing_keywords || ['LangGraph', 'vLLM', 'Docker', 'RAGAS', 'Vector Indexing']).map((kw, i) => (
-                              <button
-                                key={i}
-                                onClick={() => {
-                                  navigator.clipboard.writeText(kw);
-                                }}
-                                className="px-2.5 py-1 rounded bg-zinc-900 border border-amber-500/30 text-amber-300 hover:border-amber-400 font-mono text-xs flex items-center gap-1 transition-all"
-                                title="Click to copy keyword"
-                              >
-                                <span>+ {kw}</span>
-                              </button>
-                            ))}
-                          </div>
-                          <p className="text-[11px] text-zinc-400 font-mono">
-                            Adding these keywords into your project descriptions and skills section increases automated ATS filter pass rates by up to 3.4x.
-                          </p>
-                        </div>
-
-                        {/* Verified Profile Strengths */}
-                        <div className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
-                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                            <span className="text-xs font-mono font-bold uppercase text-emerald-400 flex items-center gap-1.5">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              Verified Candidate Strengths
-                            </span>
-                            <span className="text-[10px] font-mono text-zinc-500">Competitive Assets</span>
-                          </div>
-                          <div className="space-y-2">
-                            {(atsGaps.verified_strengths || ['Strong hands-on Python and API architecture', 'Practical experience with multi-agent orchestration']).map((st, i) => (
-                              <div key={i} className="p-2.5 rounded bg-zinc-900/60 border border-zinc-800 text-xs text-zinc-200 flex items-start gap-2">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                                <span>{st}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* STAR Formula Project Rewrites Section */}
-                      <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-b from-zinc-950 to-zinc-900/60 border border-zinc-800 space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-cyan-400" />
-                            <span className="text-xs font-mono font-bold uppercase text-white tracking-wider">
-                              1-Click STAR Resume Bullet Rewriter (Copy & Paste Ready)
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-mono text-zinc-400">
-                            Google/STAR Formula: Situation • Task • Action • Metric-Driven Result
-                          </span>
-                        </div>
-
-                        <div className="space-y-4">
-                          {(starRewrites && starRewrites.length > 0 ? starRewrites : [
-                            {
-                              project_name: 'CogniX AI Multi-Agent Engine',
-                              before_bullet: 'Built a Python backend and integrated LangChain for research and PDF search.',
-                              after_bullet: 'Architected an asynchronous 4-agent distributed intelligence pipeline in Python & LangGraph, cutting query latency by 78% (sub-10s) while processing multi-format documents with 100% factual grounding.',
-                              skills_highlighted: ['LangGraph', 'Python', 'FastAPI', 'Async IO']
-                            }
-                          ]).map((rw, idx) => (
-                            <div key={idx} className="p-3.5 rounded-lg bg-zinc-950/90 border border-zinc-800 space-y-2.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-mono font-bold text-amber-400 uppercase">
-                                  Project: {rw.project_name || `Project ${idx + 1}`}
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                  {(rw.skills_highlighted || []).map((sk, i) => (
-                                    <span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
-                                      {sk}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* Before */}
-                                <div className="p-2.5 rounded bg-zinc-900/40 border border-red-500/20 text-xs text-zinc-400 italic">
-                                  <span className="text-[10px] font-mono text-red-400 not-italic block font-bold mb-1">
-                                    Before (Weak / Low Recruiter Signal):
-                                  </span>
-                                  "{rw.before_bullet}"
-                                </div>
-
-                                {/* After */}
-                                <div className="p-2.5 rounded bg-[#0d161b] border border-cyan-500/40 text-xs text-zinc-100 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-mono text-cyan-400 font-bold flex items-center gap-1">
-                                      <Sparkles className="w-3 h-3" />
-                                      After (CogniX STAR Audited Rewrite):
-                                    </span>
-                                    <button
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(rw.after_bullet);
-                                        setCopiedBulletIdx(idx);
-                                        setTimeout(() => setCopiedBulletIdx(null), 2000);
-                                      }}
-                                      className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono flex items-center gap-1 transition-all"
-                                    >
-                                      {copiedBulletIdx === idx ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                      <span>{copiedBulletIdx === idx ? 'Copied!' : 'Copy Bullet'}</span>
-                                    </button>
-                                  </div>
-                                  <p className="font-medium leading-relaxed">
-                                    "{rw.after_bullet}"
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-2">
-                      <Target className="w-6 h-6 animate-pulse text-zinc-600" />
-                      <p className="text-xs font-mono">Running ATS gap diagnostics & STAR formula rewrites...</p>
-                    </div>
-                  )}
-                </div>
+                <AtsGapsTab
+                  atsGaps={atsGaps}
+                  starRewrites={starRewrites}
+                  copiedBulletIdx={copiedBulletIdx}
+                  setCopiedBulletIdx={setCopiedBulletIdx}
+                />
               )}
 
-              {/* Tab: 1-Click Outreach Hub */}
+              {/* Tab 3: 1-Click Ready Outreach Hub */}
               {activeTab === 'outreach' && (
-                <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                  <div className="border-b border-zinc-800 pb-3">
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-purple-400" />
-                      <h3 className="text-base font-bold text-white tracking-tight">
-                        1-Click Outreach Hub (Ready to Send)
-                      </h3>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30 font-bold">
-                        High-Conversion Templates
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-400 font-mono mt-1">
-                      Never stress over writing cold emails or recruiter DMs. Simply copy, customize placeholders, and hit send.
-                    </p>
-                  </div>
-
-                  {outreach ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {/* Card 1: Cold Email */}
-                      <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3 flex flex-col justify-between">
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                            <span className="text-xs font-mono font-bold uppercase text-cyan-400 flex items-center gap-1.5">
-                              <Send className="w-3.5 h-3.5" />
-                              Personalized Cold Email to Hiring Manager
-                            </span>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(
-                                  `Subject: ${outreach.cold_email_subject}\n\n${outreach.cold_email_body}`
-                                );
-                                setCopiedEmail(true);
-                                setTimeout(() => setCopiedEmail(false), 2000);
-                              }}
-                              className="px-2.5 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-mono flex items-center gap-1 transition-all"
-                            >
-                              {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                              <span>{copiedEmail ? 'Copied Email!' : 'Copy Full Email'}</span>
-                            </button>
-                          </div>
-
-                          <div>
-                            <label className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Subject Line:</label>
-                            <div className="p-2 rounded bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-200">
-                              {outreach.cold_email_subject}
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Email Body:</label>
-                            <pre className="p-3 rounded-lg bg-zinc-900/80 border border-zinc-800 text-xs font-sans text-zinc-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
-                              {outreach.cold_email_body}
-                            </pre>
-                          </div>
-                        </div>
-
-                        <p className="text-[10px] font-mono text-zinc-500 pt-2 border-t border-zinc-850">
-                          Pro Tip: Replace [Hiring Manager Name] and [Your Name] before sending.
-                        </p>
-                      </div>
-
-                      {/* Card 2 & 3: LinkedIn InMail & Cover Note */}
-                      <div className="space-y-4 flex flex-col justify-between">
-                        {/* LinkedIn InMail */}
-                        <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
-                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                            <span className="text-xs font-mono font-bold uppercase text-purple-400 flex items-center gap-1.5">
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              Recruiter LinkedIn InMail / Connection Note
-                            </span>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(outreach.linkedin_dm);
-                                setCopiedDm(true);
-                                setTimeout(() => setCopiedDm(false), 2000);
-                              }}
-                              className="px-2.5 py-1 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 text-xs font-mono flex items-center gap-1 transition-all"
-                            >
-                              {copiedDm ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                              <span>{copiedDm ? 'Copied DM!' : 'Copy DM'}</span>
-                            </button>
-                          </div>
-
-                          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-sans text-zinc-200 leading-relaxed">
-                            "{outreach.linkedin_dm}"
-                          </div>
-                          <span className="text-[10px] font-mono text-zinc-500 block">
-                            Optimized under 300 characters to fit LinkedIn's free invitation note limit.
-                          </span>
-                        </div>
-
-                        {/* Quick Cover Note */}
-                        <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
-                          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                            <span className="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
-                              <FileText className="w-3.5 h-3.5" />
-                              150-Word Quick Cover Note
-                            </span>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(outreach.quick_cover_note);
-                                setCopiedCover(true);
-                                setTimeout(() => setCopiedCover(false), 2000);
-                              }}
-                              className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-mono flex items-center gap-1 transition-all"
-                            >
-                              {copiedCover ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                              <span>{copiedCover ? 'Copied Note!' : 'Copy Note'}</span>
-                            </button>
-                          </div>
-
-                          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-sans text-zinc-200 leading-relaxed">
-                            {outreach.quick_cover_note}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-2">
-                      <Mail className="w-6 h-6 animate-pulse text-zinc-600" />
-                      <p className="text-xs font-mono">Outreach Agent drafting tailored cold email and LinkedIn templates...</p>
-                    </div>
-                  )}
-                </div>
+                <OutreachTab
+                  outreach={outreach}
+                  copiedEmail={copiedEmail}
+                  setCopiedEmail={setCopiedEmail}
+                  copiedDm={copiedDm}
+                  setCopiedDm={setCopiedDm}
+                  copiedCover={copiedCover}
+                  setCopiedCover={setCopiedCover}
+                />
               )}
 
-              {/* Tab 1: Rendered Markdown Report */}
+              {/* Tab 4: Markdown Career Dossier */}
               {activeTab === 'report' && (
-                <div className="p-4 sm:p-6 md:p-8 markdown-content min-h-[400px]">
-                  {finalReport ? (
-                    <div>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalReport}</ReactMarkdown>
-                      <div ref={reportBottomRef} />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-zinc-500 space-y-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
-                      <p className="text-xs font-mono">Synthesizing findings & document analysis into dossier...</p>
-                    </div>
-                  )}
-                </div>
+                <DossierTab
+                  finalReport={finalReport}
+                  reportBottomRef={reportBottomRef}
+                />
               )}
 
-              {/* Tab 2: Critic Review Scorecard */}
+              {/* Tab 5: Chief Auditor Strategic Verdict */}
               {activeTab === 'critic' && (
-                <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                  {criticFeedback ? (
-                    (() => {
-                      const audit = parseCriticFeedback(criticFeedback, null, activeInquiry, attachedFile?.docType);
-                      return (
-                        <div className="space-y-6">
-                          {/* 1. Executive Summary & Quality Seal Header */}
-                          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-zinc-950 via-[#0d141a] to-zinc-950 border border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="p-1.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                                  <ShieldCheck className="w-4 h-4" />
-                                </span>
-                                <h3 className="text-base font-bold text-white tracking-tight">
-                                  Executive Dossier & ATS Quality Audit
-                                </h3>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold uppercase">
-                                  Audited by CogniX
-                                </span>
-                              </div>
-                              <p className="text-xs text-zinc-400 font-mono">
-                                Autonomous peer verification • ATS calibration • 2026 industry benchmarks
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(
-                                    `[CogniX AI Audit Summary]\nScore: ${audit.score}/10 (${audit.scorePercent}%)\nVerdict: ${audit.verdict}\n\nTop Strengths:\n${audit.strengths.map((s) => '- ' + s).join('\n')}\n\nPriority Improvements:\n${audit.improvements.map((i) => '- ' + i).join('\n')}`
-                                  );
-                                  setCopied(true);
-                                  setTimeout(() => setCopied(false), 2000);
-                                }}
-                                className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition-colors"
-                              >
-                                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                                <span>Copy Audit</span>
-                              </button>
-                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold">
-                                <span>OVERALL SCORE:</span>
-                                <span className="text-base text-cyan-400">{audit.score} / 10</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 2. Top 4 Executive KPI Cards */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {/* KPI 1: ATS / Dossier Readiness */}
-                            <div className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 flex flex-col justify-between">
-                              <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-                                <span className="font-mono uppercase text-[11px]">ATS Readiness</span>
-                                <Target className="w-4 h-4 text-cyan-400" />
-                              </div>
-                              <div>
-                                <div className="flex items-baseline gap-1.5">
-                                  <span className="text-2xl font-bold font-mono text-white">{audit.scorePercent}%</span>
-                                  <span className="text-[11px] font-mono text-emerald-400 font-semibold">Tier-1 Ready</span>
-                                </div>
-                                <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                                  <div
-                                    className="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full transition-all duration-700"
-                                    style={{ width: `${audit.scorePercent}%` }}
-                                  />
-                                </div>
-                              </div>
-                              <span className="text-[10px] text-zinc-500 mt-2 font-mono">
-                                Calibrated for automated hiring filters
-                              </span>
-                            </div>
-
-                            {/* KPI 2: 2026 Tech Stack Alignment */}
-                            <div className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 flex flex-col justify-between">
-                              <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-                                <span className="font-mono uppercase text-[11px]">2026 Tech Index</span>
-                                <Zap className="w-4 h-4 text-amber-400" />
-                              </div>
-                              <div>
-                                <div className="flex items-baseline gap-1.5">
-                                  <span className="text-2xl font-bold font-mono text-amber-400">94.2%</span>
-                                  <span className="text-[11px] font-mono text-zinc-400">High Match</span>
-                                </div>
-                                <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                                  <div
-                                    className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all duration-700"
-                                    style={{ width: '94%' }}
-                                  />
-                                </div>
-                              </div>
-                              <span className="text-[10px] text-zinc-500 mt-2 font-mono">
-                                Multi-Agent, LangGraph, Vector RAG
-                              </span>
-                            </div>
-
-                            {/* KPI 3: Estimated Compensation Impact Band */}
-                            <div className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 flex flex-col justify-between">
-                              <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-                                <span className="font-mono uppercase text-[11px]">Comp Benchmark</span>
-                                <DollarSign className="w-4 h-4 text-emerald-400" />
-                              </div>
-                              <div>
-                                <div className="text-lg font-bold font-mono text-emerald-400 truncate">
-                                  ₹18L – ₹32L+
-                                </div>
-                                <span className="text-[10px] font-mono text-zinc-400 block">
-                                  $125k – $185k (Global Remote)
-                                </span>
-                              </div>
-                              <span className="text-[10px] text-zinc-500 mt-2 font-mono">
-                                Senior AI & Systems Engineer band
-                              </span>
-                            </div>
-
-                            {/* KPI 4: Factual Grounding & Hallucination Defense */}
-                            <div className="p-4 rounded-xl bg-zinc-950/90 border border-zinc-800 flex flex-col justify-between">
-                              <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-                                <span className="font-mono uppercase text-[11px]">Fact Grounding</span>
-                                <Award className="w-4 h-4 text-purple-400" />
-                              </div>
-                              <div>
-                                <div className="flex items-baseline gap-1.5">
-                                  <span className="text-2xl font-bold font-mono text-purple-400">100%</span>
-                                  <span className="text-[11px] font-mono text-zinc-400">Cross-Checked</span>
-                                </div>
-                                <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                                  <div
-                                    className="bg-gradient-to-r from-purple-500 to-cyan-400 h-full rounded-full"
-                                    style={{ width: '100%' }}
-                                  />
-                                </div>
-                              </div>
-                              <span className="text-[10px] text-zinc-500 mt-2 font-mono">
-                                Backed by DOM extract & live sources
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* 3. Diagnostic Matrix: Verified Strengths vs 2026 Missing Keywords */}
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            {/* Left Column: Strengths */}
-                            <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
-                              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
-                                <span className="text-xs font-mono font-bold uppercase text-emerald-400 flex items-center gap-1.5">
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                  Verified Strengths & Core Competencies
-                                </span>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
-                                  {audit.strengths.length} Verified
-                                </span>
-                              </div>
-                              <div className="space-y-2">
-                                {audit.strengths.map((str, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/80 text-xs text-zinc-200 flex items-start gap-2.5"
-                                  >
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                                    <span className="leading-relaxed">{str}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Right Column: Improvements & 2026 Missing Keywords */}
-                            <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
-                              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
-                                <span className="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
-                                  <AlertTriangle className="w-3.5 h-3.5" />
-                                  Priority Enhancements & 2026 Gaps
-                                </span>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400">
-                                  High Impact
-                                </span>
-                              </div>
-                              <div className="space-y-2">
-                                {audit.improvements.map((imp, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="p-3 rounded-lg bg-zinc-900/60 border border-amber-500/20 text-xs text-zinc-200 flex items-start gap-2.5"
-                                  >
-                                    <Target className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                                    <span className="leading-relaxed">{imp}</span>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Suggested High-Value Keyword Badges */}
-                              <div className="pt-2">
-                                <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1.5">
-                                  Recommended High-Signal Keywords to Add:
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {[
-                                    '+ LangGraph Multi-Agent',
-                                    '+ vLLM / TensorRT',
-                                    '+ Sub-10s Latency (p99)',
-                                    '+ RAGAS Evaluation',
-                                    '+ Docker Containerization',
-                                    '+ SSE Streaming',
-                                  ].map((kw, i) => (
-                                    <span
-                                      key={i}
-                                      className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-mono text-[10px] hover:border-cyan-500 transition-colors"
-                                    >
-                                      {kw}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 4. STAR Bullet Optimizer (Before vs After Rewrite) */}
-                          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-b from-zinc-950 to-zinc-900/60 border border-zinc-800 space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2.5">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4 text-cyan-400" />
-                                <span className="text-xs font-mono font-bold uppercase text-white tracking-wider">
-                                  STAR Bullet Point Transformation (Before vs After)
-                                </span>
-                              </div>
-                              <span className="text-[10px] font-mono text-zinc-400">
-                                Situation • Task • Action • Metric-Driven Result
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                              {/* Before (Weak Bullet) */}
-                              <div className="p-3.5 rounded-lg bg-zinc-950/80 border border-red-500/20 space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-mono text-red-400 font-bold uppercase">
-                                    Before (Uncalibrated / Generic)
-                                  </span>
-                                  <span className="text-[10px] font-mono text-zinc-500">Low Recruiter Signal</span>
-                                </div>
-                                <p className="text-xs text-zinc-400 italic">
-                                  "Built a multi-agent AI system with Python to search web and analyze PDF files and show results."
-                                </p>
-                              </div>
-
-                              {/* After (Optimized STAR Formula) */}
-                              <div className="p-3.5 rounded-lg bg-[#0e181d] border border-cyan-500/40 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3" />
-                                    After (CogniX STAR Audited Rewrite)
-                                  </span>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(
-                                        'Architected an autonomous 4-agent distributed intelligence pipeline in Python & LangChain, slashing research retrieval latency by 78% (sub-10s) while processing multi-format documents with 100% factual grounding.'
-                                      );
-                                      setStarCopied(true);
-                                      setTimeout(() => setStarCopied(false), 2000);
-                                    }}
-                                    className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono flex items-center gap-1 transition-all"
-                                  >
-                                    {starCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                    <span>{starCopied ? 'Copied!' : 'Copy Bullet'}</span>
-                                  </button>
-                                </div>
-                                <p className="text-xs text-zinc-100 font-medium leading-relaxed">
-                                  "Architected an autonomous 4-agent distributed intelligence pipeline in Python & LangChain, slashing research retrieval latency by 78% (sub-10s) while processing multi-format documents with 100% factual grounding."
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 5. 30-Day Offer Acceleration Action Plan */}
-                          <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
-                            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
-                              <span className="text-xs font-mono font-bold uppercase text-white flex items-center gap-1.5">
-                                <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-                                30-Day Offer Acceleration & Implementation Roadmap
-                              </span>
-                              <span className="text-[10px] font-mono text-zinc-500">4-Week Sprints</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                              {[
-                                {
-                                  week: 'Week 1',
-                                  title: 'Keyword Calibration',
-                                  desc: 'Embed LangGraph, vector indexing & RAG benchmarks directly in profile headers.',
-                                  color: 'text-cyan-400',
-                                },
-                                {
-                                  week: 'Week 2',
-                                  title: 'Metric Grounding',
-                                  desc: 'Anchor STAR bullets with verifiable latency (<10s), QPS, and cost reduction data.',
-                                  color: 'text-emerald-400',
-                                },
-                                {
-                                  week: 'Week 3',
-                                  title: 'Live Agent Deployment',
-                                  desc: 'Host interactive demo with SSE streaming and publish GitHub repo documentation.',
-                                  color: 'text-amber-400',
-                                },
-                                {
-                                  week: 'Week 4',
-                                  title: 'Target Outreach Blitz',
-                                  desc: 'Direct pitch to 15 Tier-1 AI Tech Leads with customized CogniX intelligence dossiers.',
-                                  color: 'text-purple-400',
-                                },
-                              ].map((item, idx) => (
-                                <div key={idx} className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-1">
-                                  <span className={`text-[10px] font-mono font-bold uppercase ${item.color}`}>
-                                    {item.week} • {item.title}
-                                  </span>
-                                  <p className="text-xs text-zinc-300 leading-relaxed font-sans">{item.desc}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* 6. Chief Auditor Strategic Verdict */}
-                          <div className="p-4 sm:p-5 rounded-xl bg-zinc-950/90 border border-cyan-500/30 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-mono font-bold uppercase text-cyan-400 flex items-center gap-1.5">
-                                <Award className="w-4 h-4" />
-                                Chief Auditor's Strategic Verdict
-                              </span>
-                              <button
-                                onClick={() => setShowRawCritic(!showRawCritic)}
-                                className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors"
-                              >
-                                {showRawCritic ? 'Hide Raw Audit Logs' : 'View Raw Auditor Log'}
-                              </button>
-                            </div>
-                            <blockquote className="text-xs sm:text-sm text-zinc-200 italic border-l-2 border-cyan-400 pl-3 py-1 font-sans leading-relaxed">
-                              "{audit.verdict}"
-                            </blockquote>
-
-                            {showRawCritic && (
-                              <div className="mt-3 pt-3 border-t border-zinc-800">
-                                <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">
-                                  Raw LLM Auditor Feedback:
-                                </div>
-                                <pre className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400 whitespace-pre-wrap overflow-x-auto max-h-48">
-                                  {criticFeedback}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-zinc-500 space-y-2">
-                      <ShieldCheck className="w-6 h-6 text-zinc-600 animate-pulse" />
-                      <p className="text-xs font-mono">Awaiting report completion to run audit...</p>
-                    </div>
-                  )}
-                </div>
+                <AuditorTab
+                  criticFeedback={criticFeedback}
+                  activeInquiry={activeInquiry}
+                  attachedFile={attachedFile}
+                  copied={copied}
+                  setCopied={setCopied}
+                />
               )}
 
-              {/* Tab 3: Raw Evidence & Clickable Links */}
+              {/* Tab 6: Raw Discovered Evidence */}
               {activeTab === 'sources' && (
-                <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                  <div>
-                    <h4 className="text-xs font-mono text-cyan-400 uppercase tracking-wider mb-2 font-bold">
-                      Discovered Live Reference URLs (Clickable)
-                    </h4>
-                    {searchUrls.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                        {searchUrls.map((url, i) => (
-                          <a
-                            key={i}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-cyan-500/50 text-xs text-cyan-300 hover:text-cyan-200 transition-colors group"
-                          >
-                            <span className="truncate mr-2 font-mono">{url}</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-zinc-500 group-hover:text-cyan-400 shrink-0" />
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-zinc-500 font-mono mb-4">No URLs found yet.</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-wider mb-2 font-bold">
-                      1. Scout Agent Raw Search Results
-                    </h4>
-                    <pre className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-400 whitespace-pre-wrap overflow-x-auto max-h-60">
-                      {steps.search.data || 'No search data gathered yet.'}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-wider mb-2 font-bold">
-                      2. Scholar Agent Scraped DOM Extract
-                    </h4>
-                    <pre className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-400 whitespace-pre-wrap overflow-x-auto max-h-60">
-                      {steps.reader.data || 'No deep scraped text extracted yet.'}
-                    </pre>
-                  </div>
-                </div>
+                <EvidenceTab
+                  searchUrls={searchUrls}
+                  steps={steps}
+                />
               )}
             </div>
           )}
