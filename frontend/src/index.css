@@ -45,15 +45,31 @@
   border-color: #d97706 !important;
 }
 
+/* Utility to hide scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Markdown Typography & Table Styling */
 .markdown-content table {
   width: 100%;
+  display: block;
+  overflow-x: auto;
   border-collapse: collapse;
   margin: 1.25rem 0;
   border-radius: 8px;
-  overflow: hidden;
   border: 1px solid #27272a;
   background: #0c0c10;
+}
+
+@media (min-width: 768px) {
+  .markdown-content table {
+    display: table;
+  }
 }
 
 .markdown-content th {
