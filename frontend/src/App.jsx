@@ -123,49 +123,61 @@ const DEFAULT_NOTES_PROMPTS = [
   "Cross-Reference Notes with 2026 Industry State"
 ];
 
+function getStoredJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function App() {
+  const savedActive = getStoredJson('cognix_active_work', null);
+
   const [topic, setTopic] = useState('');
-  const [activeInquiry, setActiveInquiry] = useState('');
+  const [activeInquiry, setActiveInquiry] = useState(() => savedActive?.activeInquiry || '');
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('report'); // 'report' | 'critic' | 'sources'
+  const [activeTab, setActiveTab] = useState(() => savedActive?.activeTab || 'report');
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   // Sidebar States
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cognix_sidebar_expanded');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [researchMode, setResearchMode] = useState('deep');
+  const [researchMode, setResearchMode] = useState(() => savedActive?.researchMode || 'deep');
 
   // Attached Document (Active)
-  const [attachedFile, setAttachedFile] = useState(null);
-  const [fileContext, setFileContext] = useState('');
+  const [attachedFile, setAttachedFile] = useState(() => savedActive?.attachedFile || null);
+  const [fileContext, setFileContext] = useState(() => savedActive?.fileContext || '');
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
   const reportBottomRef = useRef(null);
 
-  // Document Vault (Saved uploaded files in session)
-  const [documentVault, setDocumentVault] = useState([]);
+  // Document Vault (Saved in localStorage so documents don't disappear on refresh!)
+  const [documentVault, setDocumentVault] = useState(() => getStoredJson('cognix_vault', []));
 
   // History State
-  const [history, setHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem('cognix_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [history, setHistory] = useState(() => getStoredJson('cognix_history', []));
 
   // Agent Steps State
-  const [steps, setSteps] = useState({
+  const defaultSteps = {
     search: { status: 'idle', data: null, message: 'Ready to search' },
     reader: { status: 'idle', data: null, message: 'Waiting for search handoff' },
     writer: { status: 'idle', data: null, message: 'Waiting for extracted content' },
     critic: { status: 'idle', data: null, message: 'Waiting for report draft' },
-  });
+  };
 
-  const [finalReport, setFinalReport] = useState('');
-  const [criticFeedback, setCriticFeedback] = useState('');
+  const [steps, setSteps] = useState(() => savedActive?.steps || defaultSteps);
+  const [finalReport, setFinalReport] = useState(() => savedActive?.finalReport || '');
+  const [criticFeedback, setCriticFeedback] = useState(() => savedActive?.criticFeedback || '');
   const [errorMsg, setErrorMsg] = useState('');
 
   // Save history to localStorage
@@ -176,6 +188,49 @@ export default function App() {
       console.error('Failed to save history', e);
     }
   }, [history]);
+
+  // Save document vault to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('cognix_vault', JSON.stringify(documentVault));
+    } catch (e) {
+      console.error('Failed to save vault', e);
+    }
+  }, [documentVault]);
+
+  // Save sidebar preference
+  useEffect(() => {
+    try {
+      localStorage.setItem('cognix_sidebar_expanded', JSON.stringify(isSidebarExpanded));
+    } catch (e) {
+      console.error('Failed to save sidebar state', e);
+    }
+  }, [isSidebarExpanded]);
+
+  // Save active work to localStorage so refreshing preserves active inquiry, report, steps, attached document
+  useEffect(() => {
+    try {
+      if (activeInquiry || finalReport || attachedFile) {
+        localStorage.setItem(
+          'cognix_active_work',
+          JSON.stringify({
+            activeInquiry,
+            finalReport,
+            criticFeedback,
+            steps,
+            attachedFile,
+            fileContext,
+            activeTab,
+            researchMode,
+          })
+        );
+      } else {
+        localStorage.removeItem('cognix_active_work');
+      }
+    } catch (e) {
+      console.error('Failed to save active work', e);
+    }
+  }, [activeInquiry, finalReport, criticFeedback, steps, attachedFile, fileContext, activeTab, researchMode]);
 
   // Real PDF / Document Parser via Backend
   const handleFileUpload = async (e) => {
@@ -264,12 +319,12 @@ export default function App() {
     setFinalReport('');
     setCriticFeedback('');
     setErrorMsg('');
-    setSteps({
-      search: { status: 'idle', data: null, message: 'Ready to search' },
-      reader: { status: 'idle', data: null, message: 'Waiting for search handoff' },
-      writer: { status: 'idle', data: null, message: 'Waiting for extracted content' },
-      critic: { status: 'idle', data: null, message: 'Waiting for report draft' },
-    });
+    setSteps(defaultSteps);
+    setAttachedFile(null);
+    setFileContext('');
+    try {
+      localStorage.removeItem('cognix_active_work');
+    } catch (e) {}
     setIsMobileSidebarOpen(false);
   };
 
