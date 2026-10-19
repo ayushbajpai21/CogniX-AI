@@ -30,7 +30,8 @@
 
 /* Sleek Minimal Dark Card */
 .dark-card {
-  background-color: #0d0d11;
+  background-color: rgba(13, 13, 17, 0.88);
+  backdrop-filter: blur(8px);
   border: 1px solid #27272a;
   border-radius: 12px;
   transition: border-color 0.15s ease, background-color 0.15s ease;
@@ -41,7 +42,7 @@
 }
 
 .dark-card-active {
-  background-color: #121218;
+  background-color: rgba(18, 18, 24, 0.92);
   border-color: #d97706 !important;
 }
 
