@@ -46,6 +46,7 @@ async def upload_document(file: UploadFile = File(...)):
     filename = file.filename or "uploaded_file"
     content = await file.read()
     extracted_text = ""
+    pages_count = 1
 
     if filename.lower().endswith(".pdf"):
         import io
@@ -58,6 +59,7 @@ async def upload_document(file: UploadFile = File(...)):
                 if t:
                     pages.append(t)
             extracted_text = "\n\n".join(pages)
+            pages_count = len(reader.pages)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to read PDF: {str(e)}")
     else:
@@ -69,13 +71,41 @@ async def upload_document(file: UploadFile = File(...)):
     if not extracted_text.strip():
         extracted_text = f"Document {filename} uploaded successfully."
 
-    # Trim to 3500 chars to ensure token budget is maintained
-    trimmed = extracted_text[:3500]
+    # Detect document type and tailor suggested prompts
+    lowered = (filename + " " + extracted_text).lower()
+    if any(k in lowered for k in ["resume", "curriculum vitae", "cv", "education", "experience", "work experience", "skills", "projects", "employment", "certifications"]):
+        doc_type = "resume"
+        suggested_prompts = [
+            "Comprehensive Resume Audit & ATS Gap Analysis",
+            "2026 Live Market Role Match & Salary Benchmarks",
+            "Skill Gap Breakdown & 30-Day Upskilling Plan",
+            "STAR Impact Bullet Point Rewrites & Optimization"
+        ]
+    elif any(k in lowered for k in ["notes", "lecture", "chapter", "syllabus", "summary", "tutorial", "revision"]):
+        doc_type = "notes"
+        suggested_prompts = [
+            "Deep Synthesis & Core Concept Breakdown",
+            "Generate Comprehensive Q&A & Interview Prep",
+            "Cross-Reference Notes with 2026 Industry State"
+        ]
+    else:
+        doc_type = "document"
+        suggested_prompts = [
+            "Executive Summary & Strategic Analysis",
+            "Fact-check & Critical Assessment",
+            "Key Insights & Actionable Next Steps"
+        ]
+
+    # Trim to 4500 chars to maintain token budget while preserving full resume
+    trimmed = extracted_text[:4500]
 
     return {
         "filename": filename,
         "text": trimmed,
         "char_count": len(trimmed),
+        "doc_type": doc_type,
+        "pages_count": pages_count,
+        "suggested_prompts": suggested_prompts
     }
 
 
@@ -101,8 +131,11 @@ def run_research(req: ResearchRequest):
 
     # Step 1: Search Agent
     search_agent = build_search_agent()
+    search_query = f"Find recent, reliable and detailed information about: {topic}. Include source URLs."
+    if req.file_context and any(k in req.file_context.lower() for k in ["resume", "cv", "experience", "education", "skills", "projects", "engineer", "developer"]):
+        search_query = f"Find 2026 industry hiring requirements, key technical skills, salary expectations, and ATS criteria for roles related to: {topic}. Include specific source URLs."
     sr = search_agent.invoke({
-        "messages": [("user", f"Find recent, reliable and detailed information about: {topic}. Include source URLs.")]
+        "messages": [("user", search_query)]
     })
     state["search_results"] = sr["messages"][-1].content
 
@@ -156,8 +189,12 @@ async def stream_research(topic: str, context: Optional[str] = ""):
             await asyncio.sleep(0.1)
 
             search_agent = build_search_agent()
+            search_query = f"Find recent, reliable and detailed information about: {topic}. Be thorough and list specific source URLs."
+            if context and any(k in context.lower() for k in ["resume", "cv", "experience", "education", "skills", "projects", "engineer", "developer"]):
+                search_query = f"Find 2026 industry hiring requirements, key technical skills, salary expectations, and ATS criteria for roles related to: {topic}. Include specific source URLs."
+
             sr = await asyncio.to_thread(search_agent.invoke, {
-                "messages": [("user", f"Find recent, reliable and detailed information about: {topic}. Be thorough and list specific source URLs.")]
+                "messages": [("user", search_query)]
             })
             state["search_results"] = sr["messages"][-1].content
             yield sse("progress", {"step": "search", "status": "done", "data": state["search_results"]})

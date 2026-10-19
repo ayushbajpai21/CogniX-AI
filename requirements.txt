@@ -31,3 +31,4 @@ rich>=13.7.0
 tenacity>=8.2.0
 orjson>=3.9.0
 pydantic>=2.5.0
+pypdf>=4.0.0
