@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import uuid
 import asyncio
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +15,9 @@ from tools import scrape_url, web_search
 
 load_dotenv()
 
-app = FastAPI(title="ResearchMind AI API", version="2.0.0")
+app = FastAPI(title="CogniX AI API", version="2.0.0")
+
+DOC_STORE = {}
 
 app.add_middleware(
     CORSMiddleware,
@@ -98,8 +101,11 @@ async def upload_document(file: UploadFile = File(...)):
 
     # Trim to 4500 chars to maintain token budget while preserving full resume
     trimmed = extracted_text[:4500]
+    doc_id = str(uuid.uuid4())[:8]
+    DOC_STORE[doc_id] = trimmed
 
     return {
+        "doc_id": doc_id,
         "filename": filename,
         "text": trimmed,
         "char_count": len(trimmed),
@@ -171,10 +177,13 @@ def run_research(req: ResearchRequest):
 
 
 @app.get("/api/research/stream")
-async def stream_research(topic: str, context: Optional[str] = ""):
+async def stream_research(topic: str, context: Optional[str] = "", doc_id: Optional[str] = ""):
     """Server-Sent Events (SSE) endpoint to stream agent progress live to React UI."""
     if not topic.strip():
         raise HTTPException(status_code=400, detail="Topic cannot be empty.")
+
+    if doc_id and doc_id in DOC_STORE:
+        context = DOC_STORE[doc_id]
 
     async def event_generator():
         def sse(event_type: str, data: dict):

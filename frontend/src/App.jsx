@@ -197,6 +197,7 @@ export default function App() {
 
       const newDoc = {
         id: Date.now(),
+        docId: data.doc_id || '',
         name: file.name,
         size: (file.size / 1024).toFixed(1) + ' KB',
         charCount: data.char_count || 0,
@@ -320,7 +321,13 @@ export default function App() {
     });
 
     try {
-      const url = `/api/research/stream?topic=${encodeURIComponent(query)}&context=${encodeURIComponent(fileContext)}`;
+      const url =
+        `/api/research/stream?topic=${encodeURIComponent(query)}` +
+        (attachedFile?.docId
+          ? `&doc_id=${encodeURIComponent(attachedFile.docId)}`
+          : fileContext
+          ? `&context=${encodeURIComponent(fileContext.slice(0, 1500))}`
+          : '');
       const eventSource = new EventSource(url);
 
       eventSource.addEventListener('progress', (e) => {
