@@ -32,35 +32,82 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Circular Monogram Logo (matching reference design)
+// Futuristic Cybernetic AI Agent Logo (CogniX AI Neural Nexus)
 function BrandLogo({ className = "w-9 h-9" }) {
   return (
     <div className={`relative ${className} shrink-0`}>
-      <svg viewBox="0 0 100 100" fill="none" className="w-full h-full drop-shadow-md">
+      <svg viewBox="0 0 100 100" fill="none" className="w-full h-full drop-shadow-[0_2px_8px_rgba(34,211,238,0.25)]">
         <defs>
-          <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fb923c" />
-            <stop offset="50%" stopColor="#f59e0b" />
-            <stop offset="100%" stopColor="#ea580c" />
+          <linearGradient id="cyberCore" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#22d3ee" />
+            <stop offset="50%" stopColor="#8b5cf6" />
+            <stop offset="100%" stopColor="#f59e0b" />
+          </linearGradient>
+          <linearGradient id="cyberShield" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#1e1b4b" />
+            <stop offset="100%" stopColor="#09090b" />
+          </linearGradient>
+          <linearGradient id="glowCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#38bdf8" />
+            <stop offset="100%" stopColor="#0284c7" />
+          </linearGradient>
+          <linearGradient id="glowAmber" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#d97706" />
           </linearGradient>
         </defs>
-        <circle cx="50" cy="50" r="44" fill="url(#brandGrad)" />
-        <circle cx="50" cy="50" r="41" stroke="#ffffff" strokeOpacity="0.25" strokeWidth="1.5" />
-        <path
-          d="M34 26 C34 24.5 35.5 23 37 23 H56 C65 23 72 29 72 37.5 C72 44.5 66.5 50 59 51.5 L73 74 C74.2 76 72.8 78 70.5 78 H60 C58.5 78 57 77 56 75.5 L44 54 H44 V75 C44 76.5 42.5 78 41 78 H37 C35.5 78 34 76.5 34 75 V26 Z M44 32 V46 H54 C59 46 62.5 42.5 62.5 39 C62.5 35.5 59 32 54 32 H44 Z"
-          fill="#ffffff"
+
+        {/* Outer Hexagonal Cyber Shield */}
+        <polygon
+          points="50,6 88,28 88,72 50,94 12,72 12,28"
+          fill="url(#cyberShield)"
+          stroke="#38bdf8"
+          strokeWidth="2.5"
+          strokeOpacity="0.45"
         />
-        <circle cx="68" cy="28" r="4" fill="#ffffff" />
+
+        {/* Inner High-Tech Energy Grid */}
+        <polygon
+          points="50,16 80,33 80,67 50,84 20,67 20,33"
+          stroke="url(#cyberCore)"
+          strokeWidth="1.5"
+          strokeDasharray="4 2"
+          strokeOpacity="0.75"
+        />
+
+        {/* Central Multi-Agent Neural Nexus ('X' Core) */}
+        <path
+          d="M34 32 L66 68 M66 32 L34 68"
+          stroke="url(#cyberCore)"
+          strokeWidth="5.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M50 20 L50 40 M50 60 L50 80"
+          stroke="#ffffff"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeOpacity="0.85"
+        />
+
+        {/* 4 Autonomous Agent Orbit Nodes */}
+        <circle cx="50" cy="18" r="4" fill="url(#glowCyan)" stroke="#ffffff" strokeWidth="1.5" />
+        <circle cx="78" cy="50" r="4" fill="url(#glowAmber)" stroke="#ffffff" strokeWidth="1.5" />
+        <circle cx="50" cy="82" r="4" fill="url(#glowAmber)" stroke="#ffffff" strokeWidth="1.5" />
+        <circle cx="22" cy="50" r="4" fill="url(#glowCyan)" stroke="#ffffff" strokeWidth="1.5" />
+
+        {/* Central Quantum Node */}
+        <circle cx="50" cy="50" r="5" fill="#ffffff" />
       </svg>
     </div>
   );
 }
 
 const SUGGESTED_TOPICS = [
-  "Agentic AI Trends 2026",
-  "Distributed Systems Architecture",
-  "LLM Fine-tuning vs RAG in 2026",
-  "Quantum Computing Error Correction"
+  "Agentic AI Architecture 2026",
+  "AI Engineer Resume ATS Benchmarks",
+  "Distributed LLM Serving & vLLM",
+  "DeepSeek R1 vs Claude 3.5 Sonnet"
 ];
 
 const DEFAULT_RESUME_PROMPTS = [
@@ -84,18 +131,17 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('report'); // 'report' | 'critic' | 'sources'
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
-  // Sidebar States:
-  // On desktop: isSidebarExpanded controls whether it's full width (w-72) or icon rail (w-18)
-  // On mobile: isMobileSidebarOpen controls slide-in drawer
+  // Sidebar States
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [researchMode, setResearchMode] = useState('deep'); // 'fast' | 'deep' | 'academic'
+  const [researchMode, setResearchMode] = useState('deep');
 
   // Attached Document (Active)
   const [attachedFile, setAttachedFile] = useState(null);
   const [fileContext, setFileContext] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
+  const reportBottomRef = useRef(null);
 
   // Document Vault (Saved uploaded files in session)
   const [documentVault, setDocumentVault] = useState([]);
@@ -103,7 +149,7 @@ export default function App() {
   // History State
   const [history, setHistory] = useState(() => {
     try {
-      const saved = localStorage.getItem('researchmind_history');
+      const saved = localStorage.getItem('cognix_history');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -125,7 +171,7 @@ export default function App() {
   // Save history to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('researchmind_history', JSON.stringify(history));
+      localStorage.setItem('cognix_history', JSON.stringify(history));
     } catch (e) {
       console.error('Failed to save history', e);
     }
@@ -166,7 +212,6 @@ export default function App() {
       setIsMobileSidebarOpen(false);
     } catch (err) {
       console.error('Error uploading file:', err);
-      // Fallback
       const reader = new FileReader();
       reader.onload = (event) => {
         const fallbackText = event.target.result || '';
@@ -248,12 +293,12 @@ export default function App() {
   };
 
   const clearAllHistory = () => {
-    if (window.confirm('Clear all past research history?')) {
+    if (window.confirm('Clear all past research dossiers?')) {
       setHistory([]);
     }
   };
 
-  // Trigger Research with optional direct query override
+  // Trigger Research with fast SSE stream
   const handleExecuteResearch = async (overrideQuery = null) => {
     const query = (overrideQuery || topic).trim();
     if (!query || isRunning) return;
@@ -268,7 +313,7 @@ export default function App() {
     setActiveTab('report');
 
     setSteps({
-      search: { status: 'running', data: null, message: 'Active: Scanning live internet & industry benchmarks...' },
+      search: { status: 'running', data: null, message: 'Active: Scouting live internet & 2026 benchmarks...' },
       reader: { status: 'waiting', data: null, message: 'Waiting for Scout Agent handoff' },
       writer: { status: 'waiting', data: null, message: 'Waiting for Scholar Agent extraction' },
       critic: { status: 'waiting', data: null, message: 'Waiting for Scribe Agent synthesis' },
@@ -286,13 +331,13 @@ export default function App() {
           const next = { ...prev };
 
           if (step === 'search' && status === 'done') {
-            next.search = { status: 'done', data, message: 'Primary sources indexed' };
-            next.reader = { status: 'running', data: null, message: 'Active: Scraping webpage text...' };
+            next.search = { status: 'done', data, message: 'Primary benchmarks indexed' };
+            next.reader = { status: 'running', data: null, message: 'Active: Parsing DOM & mining content...' };
           } else if (step === 'reader' && status === 'done') {
             next.reader = { status: 'done', data, message: 'Deep DOM content extracted' };
-            next.writer = { status: 'running', data: null, message: 'Active: Synthesizing dossier & document analysis...' };
+            next.writer = { status: 'running', data: null, message: 'Active: Synthesizing full dossier & document analysis...' };
           } else if (step === 'writer' && status === 'done') {
-            next.writer = { status: 'done', data, message: 'Dossier report synthesized' };
+            next.writer = { status: 'done', data, message: 'Comprehensive dossier generated' };
             next.critic = { status: 'running', data: null, message: 'Active: Evaluating quality & scoring...' };
             setFinalReport(data);
           } else if (step === 'critic' && status === 'done') {
@@ -356,8 +401,8 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const name = (activeInquiry || 'research').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    link.download = `${name}_report.md`;
+    const name = (activeInquiry || 'cognix_research').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    link.download = `${name}_dossier.md`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -423,7 +468,7 @@ export default function App() {
   const searchUrls = extractClickableUrls(steps.search.data);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#09090b] text-zinc-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#09090b] text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Hidden File Input for uploading */}
       <input
         type="file"
@@ -444,10 +489,8 @@ export default function App() {
       {/* ── Desktop & Mobile Responsive Sidebar ── */}
       <aside
         className={`fixed md:static inset-y-0 left-0 z-50 h-full border-r border-zinc-800/80 bg-[#0c0c10] shrink-0 transition-all duration-300 ease-in-out flex flex-col ${
-          // Mobile drawer slide
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } ${
-          // Desktop width: Icon Rail (w-[72px]) vs Expanded (w-72 lg:w-80)
           isSidebarExpanded ? 'w-72 sm:w-80' : 'md:w-[72px] w-72'
         }`}
       >
@@ -458,20 +501,19 @@ export default function App() {
             {(isSidebarExpanded || isMobileSidebarOpen) && (
               <div className="truncate">
                 <span className="font-bold text-white text-sm tracking-tight block truncate">
-                  Research<span className="text-amber-500">Mind</span> AI
+                  Cogni<span className="text-cyan-400">X</span> <span className="text-amber-500">AI</span>
                 </span>
                 <p className="text-[10px] text-zinc-500 font-mono truncate">Multi-Agent Intelligence</p>
               </div>
             )}
           </div>
 
-          {/* Toggle Button */}
+          {/* Sidebar internal toggle button (ONLY button on desktop) */}
           <div className="flex items-center">
-            {/* Desktop toggle: Collapse / Expand Rail */}
             <button
               onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
               className="hidden md:flex p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-              title={isSidebarExpanded ? 'Collapse into Icon Rail' : 'Expand Sidebar'}
+              title={isSidebarExpanded ? 'Collapse to Icon Rail' : 'Expand Sidebar'}
             >
               {isSidebarExpanded ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
             </button>
@@ -494,7 +536,7 @@ export default function App() {
               {/* New Research Button (Rail) */}
               <button
                 onClick={startNewSession}
-                className="group relative p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-all active:scale-95 shadow-sm"
+                className="group relative p-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-90 text-black transition-all active:scale-95 shadow-sm"
                 title="New Research Session"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -507,11 +549,11 @@ export default function App() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingFile}
-                className="group relative p-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-amber-400 transition-all active:scale-95"
+                className="group relative p-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-cyan-400 transition-all active:scale-95"
                 title="Upload Document"
               >
                 {uploadingFile ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
                 ) : (
                   <FileUp className="w-4 h-4" />
                 )}
@@ -528,7 +570,7 @@ export default function App() {
               >
                 <Layers className="w-4 h-4" />
                 {documentVault.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-black text-[9px] font-bold flex items-center justify-center font-mono">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 text-black text-[9px] font-bold flex items-center justify-center font-mono">
                     {documentVault.length}
                   </span>
                 )}
@@ -571,12 +613,12 @@ export default function App() {
             <div className="flex flex-col items-center space-y-2">
               <button
                 onClick={() => setIsSidebarExpanded(true)}
-                className="p-2 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-zinc-900 transition-colors"
+                className="p-2 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-900 transition-colors"
                 title="Expand Sidebar"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
-              <div className="text-[9px] font-mono font-bold text-amber-500/70 uppercase">
+              <div className="text-[9px] font-mono font-bold text-cyan-400/80 uppercase">
                 {researchMode[0]}
               </div>
             </div>
@@ -590,7 +632,7 @@ export default function App() {
             <div className="p-3.5 space-y-2.5 border-b border-zinc-800/80">
               <button
                 onClick={startNewSession}
-                className="w-full py-2.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm"
+                className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-95 text-black font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 New Research Session
@@ -603,12 +645,12 @@ export default function App() {
               >
                 {uploadingFile ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />
                     <span>Extracting PDF Text...</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-400 transition-colors" />
+                    <Upload className="w-3.5 h-3.5 text-zinc-400 group-hover:text-cyan-400 transition-colors" />
                     <span>Upload PDF (Resume / Notes)</span>
                   </>
                 )}
@@ -619,7 +661,7 @@ export default function App() {
             <div className="p-3.5 border-b border-zinc-800/80">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-amber-500" />
+                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
                   Document Vault ({documentVault.length})
                 </span>
               </div>
@@ -640,13 +682,13 @@ export default function App() {
                         onClick={() => selectVaultDoc(doc)}
                         className={`p-2 rounded-lg border text-xs cursor-pointer transition-all flex items-center justify-between gap-2 ${
                           isSelected
-                            ? 'border-amber-500/60 bg-amber-500/10 text-white'
+                            ? 'border-cyan-500/60 bg-cyan-500/10 text-white'
                             : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-700 text-zinc-300'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate flex-1">
                           <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase shrink-0 ${
-                            doc.docType === 'resume' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                            doc.docType === 'resume' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                           }`}>
                             {doc.docType}
                           </span>
@@ -685,7 +727,7 @@ export default function App() {
                     onClick={() => setResearchMode(m.id)}
                     className={`py-1 text-[11px] font-medium rounded transition-all ${
                       researchMode === m.id
-                        ? 'bg-amber-500 text-black font-semibold'
+                        ? 'bg-gradient-to-r from-cyan-500 to-amber-500 text-black font-semibold'
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -699,10 +741,10 @@ export default function App() {
             <div className="p-3.5 border-b border-zinc-800/80">
               <button
                 onClick={() => setShowHowItWorks(!showHowItWorks)}
-                className="w-full flex items-center justify-between text-[11px] font-mono text-zinc-400 uppercase tracking-wider hover:text-amber-400 transition-colors font-semibold"
+                className="w-full flex items-center justify-between text-[11px] font-mono text-zinc-400 uppercase tracking-wider hover:text-cyan-400 transition-colors font-semibold"
               >
                 <span className="flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-amber-500" />
+                  <Cpu className="w-3.5 h-3.5 text-cyan-400" />
                   Agent Architecture
                 </span>
                 {showHowItWorks ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -711,10 +753,10 @@ export default function App() {
               {showHowItWorks && (
                 <div className="mt-2.5 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] text-zinc-400 space-y-2 font-mono">
                   <div>
-                    <strong className="text-amber-400">01 Scout:</strong> Live internet discovery & 2026 standards.
+                    <strong className="text-cyan-400">01 Scout:</strong> Live internet discovery & 2026 standards.
                   </div>
                   <div>
-                    <strong className="text-amber-400">02 Scholar:</strong> DOM text extraction & verification.
+                    <strong className="text-cyan-400">02 Scholar:</strong> DOM text extraction & verification.
                   </div>
                   <div>
                     <strong className="text-amber-400">03 Scribe:</strong> Synthesizes report + uploaded PDF.
@@ -730,7 +772,7 @@ export default function App() {
             <div className="flex-1 p-3.5 space-y-1 overflow-y-auto">
               <div className="flex items-center justify-between px-1 mb-2">
                 <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
                   Recent Dossiers ({history.length})
                 </span>
                 {history.length > 0 && (
@@ -761,7 +803,7 @@ export default function App() {
                             [{item.docType}]
                           </span>
                         )}
-                        <p className="text-xs text-zinc-300 font-medium truncate group-hover:text-amber-400 transition-colors">
+                        <p className="text-xs text-zinc-300 font-medium truncate group-hover:text-cyan-400 transition-colors">
                           {item.topic}
                         </p>
                       </div>
@@ -784,10 +826,10 @@ export default function App() {
 
       {/* ── Main App Container ── */}
       <div className="flex-1 h-full flex flex-col overflow-hidden bg-[#09090b]">
-        {/* Top Minimal Responsive Navbar */}
+        {/* Top Minimal Responsive Navbar (NO DUPLICATE ICONS) */}
         <header className="h-14 border-b border-zinc-800/80 bg-[#0c0c10] shrink-0 flex items-center justify-between px-3 sm:px-6 md:px-8 z-20">
           <div className="flex items-center gap-2.5 sm:gap-3 truncate">
-            {/* Mobile menu trigger */}
+            {/* Mobile menu trigger ONLY (hidden on desktop) */}
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
               className="md:hidden p-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-colors"
@@ -796,35 +838,21 @@ export default function App() {
               <Menu className="w-4 h-4" />
             </button>
 
-            {/* Desktop icon rail expand toggle if collapsed */}
-            {!isSidebarExpanded && (
-              <button
-                onClick={() => setIsSidebarExpanded(true)}
-                className="hidden md:flex p-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-colors"
-                title="Expand Sidebar"
-              >
-                <PanelLeftOpen className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* Brand Logo & Name */}
+            {/* Brand Title (Clean & uncluttered, no redundant icons) */}
             <div className="flex items-center gap-2">
-              <BrandLogo className="w-7 h-7 sm:w-8 sm:h-8" />
-              <div className="truncate">
-                <span className="font-bold text-white text-xs sm:text-sm tracking-tight">
-                  Research<span className="text-amber-500">Mind</span> AI
-                </span>
-                <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline ml-2">
-                  Autonomous Multi-Agent Intelligence
-                </span>
-              </div>
+              <span className="font-bold text-white text-sm sm:text-base tracking-tight">
+                Cogni<span className="text-cyan-400">X</span> <span className="text-amber-500">AI</span>
+              </span>
+              <span className="text-[11px] font-mono text-zinc-500 hidden sm:inline pl-2 border-l border-zinc-800">
+                Autonomous Multi-Agent Intelligence
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Active Document Pill */}
             {attachedFile && (
-              <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono">
+              <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
                 <FileText className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate max-w-[90px] sm:max-w-[140px]">{attachedFile.name}</span>
                 <button
@@ -838,7 +866,7 @@ export default function App() {
             )}
 
             <div className="hidden sm:block px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-mono">
-              Depth: <span className="text-amber-400 font-bold uppercase">{researchMode}</span>
+              Depth: <span className="text-cyan-400 font-bold uppercase">{researchMode}</span>
             </div>
 
             <button
@@ -859,7 +887,7 @@ export default function App() {
               {activeInquiry ? (
                 <>
                   <span className="text-zinc-400 font-normal">Active Investigation:</span>
-                  <span className="text-amber-500 break-words">{activeInquiry}</span>
+                  <span className="text-cyan-400 break-words">{activeInquiry}</span>
                 </>
               ) : (
                 <>
@@ -868,21 +896,21 @@ export default function App() {
               )}
             </h1>
             <p className="text-xs text-zinc-400">
-              Scout, Scholar, Scribe & Auditor agents collaborate to discover, extract, analyze, and review.
+              Scout, Scholar, Scribe & Auditor agents collaborate to discover, extract, analyze, and review in under 10 seconds.
             </p>
           </div>
 
           {/* ── Main Prompt & Document Integration Workspace ── */}
           <div className="dark-card p-3 sm:p-4 space-y-3 border-zinc-700/60 bg-[#0d0d12]">
-            {/* If a Document is Attached: Show Prominent Attachment Pill & Document Quick Presets */}
+            {/* If a Document is Attached: Show Attachment Pill & Quick Actions */}
             {attachedFile ? (
               <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-zinc-900/90 border border-amber-500/30">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-zinc-900/90 border border-cyan-500/30">
                   <div className="flex items-center gap-2 truncate">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500 text-black uppercase">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-400 text-black uppercase">
                       {attachedFile.docType}
                     </span>
-                    <FileText className="w-4 h-4 text-amber-400 shrink-0" />
+                    <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
                     <span className="text-xs font-medium text-white truncate max-w-[150px] sm:max-w-xs">
                       {attachedFile.name}
                     </span>
@@ -908,7 +936,7 @@ export default function App() {
                 {/* Instant Quick-Action Analysis Presets for Attached File */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold tracking-wider">
                       One-Click Document Actions:
                     </span>
@@ -920,10 +948,10 @@ export default function App() {
                         type="button"
                         onClick={() => handleExecuteResearch(p)}
                         disabled={isRunning}
-                        className="text-left p-2.5 rounded-lg bg-zinc-950/80 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 text-xs text-zinc-300 hover:text-white transition-all flex items-center justify-between group active:scale-[0.99]"
+                        className="text-left p-2.5 rounded-lg bg-zinc-950/80 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/50 text-xs text-zinc-300 hover:text-white transition-all flex items-center justify-between group active:scale-[0.99]"
                       >
                         <span className="truncate pr-2 font-medium">{p}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-amber-400 shrink-0 transition-colors" />
+                        <ArrowRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-cyan-400 shrink-0 transition-colors" />
                       </button>
                     ))}
                   </div>
@@ -939,7 +967,7 @@ export default function App() {
               }}
               className="relative"
             >
-              <div className="flex items-center bg-zinc-950 rounded-lg border border-zinc-800 focus-within:border-amber-500 transition-colors p-1">
+              <div className="flex items-center bg-zinc-950 rounded-lg border border-zinc-800 focus-within:border-cyan-500 transition-colors p-1">
                 <Search className="w-4 h-4 text-zinc-400 ml-2.5 sm:ml-3 shrink-0" />
                 <input
                   type="text"
@@ -954,13 +982,12 @@ export default function App() {
                   className="w-full px-2.5 sm:px-3 py-2 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-xs sm:text-sm"
                 />
 
-                {/* Direct File Upload button inside prompt bar if no file is attached */}
                 {!attachedFile && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingFile || isRunning}
-                    className="p-1.5 sm:p-2 text-zinc-400 hover:text-amber-400 hover:bg-zinc-900 rounded-md transition-colors mr-1 shrink-0"
+                    className="p-1.5 sm:p-2 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-900 rounded-md transition-colors mr-1 shrink-0"
                     title="Upload PDF (Resume or Notes)"
                   >
                     <Upload className="w-4 h-4" />
@@ -973,7 +1000,7 @@ export default function App() {
                   className={`px-3 sm:px-4 py-2 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-all shrink-0 ${
                     isRunning || !topic.trim()
                       ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                      : 'bg-amber-500 hover:bg-amber-600 text-black active:scale-95 shadow-sm'
+                      : 'bg-gradient-to-r from-cyan-500 to-amber-500 hover:opacity-95 text-black active:scale-95 shadow-sm'
                   }`}
                 >
                   {isRunning ? (
@@ -988,7 +1015,6 @@ export default function App() {
               </div>
             </form>
 
-            {/* If No File: Suggest Popular Topics */}
             {!attachedFile && (
               <div className="flex items-center gap-1.5 flex-wrap pt-1">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase">Suggestions:</span>
@@ -1027,7 +1053,7 @@ export default function App() {
                   key={agent.id}
                   className={`dark-card p-3.5 sm:p-4 transition-all ${
                     isRunningStep
-                      ? 'dark-card-active'
+                      ? 'border-cyan-500/60 bg-[#0f141a]'
                       : isDoneStep
                       ? 'border-emerald-500/30 bg-[#0d1410]'
                       : 'opacity-70'
@@ -1037,7 +1063,7 @@ export default function App() {
                     <div
                       className={`p-1.5 rounded border ${
                         isRunningStep
-                          ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                          ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-400'
                           : isDoneStep
                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                           : 'bg-zinc-900 border-zinc-800 text-zinc-500'
@@ -1058,7 +1084,7 @@ export default function App() {
                   <div className="mt-2.5 pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono">
                     <span className="text-zinc-500">Status:</span>
                     {isRunningStep && (
-                      <span className="text-amber-400 font-bold flex items-center gap-1">
+                      <span className="text-cyan-400 font-bold flex items-center gap-1">
                         <RefreshCw className="w-3 h-3 animate-spin" />
                         RUNNING
                       </span>
@@ -1091,7 +1117,7 @@ export default function App() {
                     onClick={() => setActiveTab('report')}
                     className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
                       activeTab === 'report'
-                        ? 'bg-amber-500 text-black'
+                        ? 'bg-cyan-500 text-black'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                     }`}
                   >
@@ -1139,7 +1165,7 @@ export default function App() {
                         className="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono flex items-center gap-1 transition-all"
                         title="Export Markdown Document"
                       >
-                        <Download className="w-3.5 h-3.5 text-amber-500" />
+                        <Download className="w-3.5 h-3.5 text-cyan-400" />
                         <span className="hidden sm:inline">Export .md</span>
                       </button>
                     </div>
@@ -1149,12 +1175,15 @@ export default function App() {
 
               {/* Tab 1: Rendered Markdown Report */}
               {activeTab === 'report' && (
-                <div className="p-4 sm:p-6 md:p-8 markdown-content overflow-x-auto">
+                <div className="p-4 sm:p-6 md:p-8 markdown-content min-h-[400px]">
                   {finalReport ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalReport}</ReactMarkdown>
+                    <div>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalReport}</ReactMarkdown>
+                      <div ref={reportBottomRef} />
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-zinc-500 space-y-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
+                      <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
                       <p className="text-xs font-mono">Synthesizing findings & document analysis into dossier...</p>
                     </div>
                   )}
@@ -1190,7 +1219,7 @@ export default function App() {
               {activeTab === 'sources' && (
                 <div className="p-4 sm:p-6 md:p-8 space-y-6">
                   <div>
-                    <h4 className="text-xs font-mono text-amber-500 uppercase tracking-wider mb-2 font-bold">
+                    <h4 className="text-xs font-mono text-cyan-400 uppercase tracking-wider mb-2 font-bold">
                       Discovered Live Reference URLs (Clickable)
                     </h4>
                     {searchUrls.length > 0 ? (
@@ -1201,10 +1230,10 @@ export default function App() {
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-amber-500/50 text-xs text-amber-400 hover:text-amber-300 transition-colors group"
+                            className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-cyan-500/50 text-xs text-cyan-300 hover:text-cyan-200 transition-colors group"
                           >
                             <span className="truncate mr-2 font-mono">{url}</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-zinc-500 group-hover:text-amber-400 shrink-0" />
+                            <ExternalLink className="w-3.5 h-3.5 text-zinc-500 group-hover:text-cyan-400 shrink-0" />
                           </a>
                         ))}
                       </div>

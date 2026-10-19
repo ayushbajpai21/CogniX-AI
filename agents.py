@@ -12,9 +12,9 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 if groq_api_key:
     from langchain_groq import ChatGroq
     groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
-    agent_llm = ChatGroq(model=groq_model, temperature=0, max_tokens=600)
-    writer_llm = ChatGroq(model=groq_model, temperature=0.1, max_tokens=1500)
-    critic_llm = ChatGroq(model=groq_model, temperature=0, max_tokens=700)
+    agent_llm = ChatGroq(model=groq_model, temperature=0, max_tokens=800)
+    writer_llm = ChatGroq(model=groq_model, temperature=0.1, max_tokens=2500)
+    critic_llm = ChatGroq(model=groq_model, temperature=0, max_tokens=900)
 else:
     from langchain_openai import ChatOpenAI
     agent_llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
@@ -38,23 +38,23 @@ def build_reader_agent():
     )
 
 
-# 3rd - Scribe Agent (Dynamic: General Research OR Document/Resume Deep Analysis)
+# 3rd - Scribe Agent (Dynamic: Deep Investigation OR Resume/Document Intelligence Dossier)
 writer_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are an elite research analyst, document intelligence specialist, and senior technical career auditor.
-Format your output using clean GitHub-flavored Markdown (H1, H2, tables, bold text, bullet points).
-Never truncate tables or sentences. Provide full, insightful, actionable content.
+    ("system", """You are CogniX AI's elite Lead Research Analyst and Senior Career Intelligence Architect.
+Format your output in clean, publication-ready GitHub-flavored Markdown.
+Use clear headings (H1, H2, H3), bold text, bullet points, and markdown comparison tables.
+Never truncate sentences or tables. Do NOT write placeholders or meta notes like 'Punchy overview', '(Concrete sections)', or '(Actionable next steps)'.
+Always write genuine, comprehensive, high-value content.
 
-SPECIAL INSTRUCTION FOR ATTACHED RESUMES / CV / NOTES:
-If the user provided an uploaded Resume, CV, or Notes document:
-1. Deeply analyze the candidate's actual skills, education, projects, and work experience from the document.
-2. Cross-reference their profile against current 2026 industry benchmarks and job market requirements discovered in the research.
-3. Structure your response as an exhaustive, high-impact Dossier:
-   - Profile Breakdown & Estimated ATS Pass Score (0-100%)
-   - Technical Stack Matrix: Skills Present vs. High-Priority 2026 Missing Skills (in a Markdown Table)
-   - Projects & Experience Review: Standout highlights + Before/After STAR bullet point rewrites
-   - Best-Fit 2026 Roles & Target Companies (e.g. AI Engineer, Full-Stack, Systems Engineer)
-   - 30-Day High-Impact Action Plan to land interviews"""),
-    ("human", """Perform a complete investigation on the topic and context below.
+SPECIAL INSTRUCTION FOR ATTACHED RESUMES / CV:
+If the user provided an uploaded Resume or CV:
+1. Executive Profile Evaluation: Give a professional summary of the candidate and estimated ATS Match Score (e.g., 88/100).
+2. Skills Matrix (Markdown Table): Compare the Candidate's Existing Skills with 2026 Industry In-Demand Requirements and Priority Keywords.
+3. Projects & Experience Review: Highlight key strengths, and rewrite 2-3 weak project bullet points using the Google/STAR (Situation-Task-Action-Result) formula with metrics.
+4. Top 2026 Job Role Matches: Specific job titles, expected salary bands, and top companies hiring for this stack.
+5. 30-Day Targeted Career Roadmap: A prioritized, high-leverage action plan to land high-paying offers.
+"""),
+    ("human", """Perform an exhaustive, deep investigation on the topic and context below.
 
 Topic: {topic}
 
@@ -65,29 +65,35 @@ Output your analysis following this clean structure:
 
 # {topic}
 
-## 1. Executive Summary & Profile Assessment
-(Punchy overview evaluating the subject or candidate profile, core strengths, and readiness score)
+## 1. Executive Summary & Assessment
+Provide a 2-3 paragraph deep executive analysis evaluating the subject or candidate profile, key competitive strengths, and readiness score.
 
-## 2. Key Findings & Detailed Analysis
-(Concrete sections with facts, extracted skills/data, markdown comparison tables, and market alignment)
+## 2. Deep Technical Breakdown & Market Insights
+Provide detailed facts, architectural insights, and a Markdown Comparison Table highlighting key capabilities versus 2026 industry benchmarks.
 
-## 3. Critical Gaps, Roadblocks & Market Benchmarks
-(Specific shortcomings, missing skills/keywords, or emerging challenges in 2026)
+## 3. Critical Gaps & 2026 Industry Challenges
+Provide specific gaps, missing keywords, technical bottlenecks, or market hurdles.
 
 ## 4. Strategic Recommendations & Action Plan
-(Actionable next steps, bullet rewrites, and target milestones)
+Provide concrete, prioritized next steps, project enhancements, and implementation milestones.
 
-## 5. Reference Sources
-(List verified URLs found during research as clickable markdown links)"""),
+## 5. Verified Sources & References
+List verified source URLs found during research as clickable markdown links."""),
 ])
 
 writer_chain = writer_prompt | writer_llm | StrOutputParser()
 
 
-# 4th - Auditor Agent
+# 4th - Auditor Agent (Objective Peer Review & Scoring)
 critic_prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are an objective senior reviewer. Evaluate research reports and document analyses on factual accuracy, depth, actionable value, and completeness."),
-    ("human", """Review the report below.
+    ("system", """You are CogniX AI's Chief Quality Auditor.
+Evaluate research dossiers and resume audits on factual depth, structure, table completeness, and actionable value.
+Your score should reflect the true quality and depth of the report:
+- 8.5 to 10.0: Outstanding, detailed, with structured markdown tables, actionable steps, and clear evidence.
+- 7.0 to 8.4: Good, solid analysis with minor areas for expansion.
+- 5.0 to 6.9: Average, needs deeper technical details or more concrete examples.
+- Below 5.0: Incomplete or missing sections."""),
+    ("human", """Review the dossier below and provide an objective evaluation:
 
 Report:
 {report}
@@ -97,16 +103,16 @@ Provide your evaluation in this exact structured format:
 Score: X/10
 
 Strengths:
-- (Strength point 1)
-- (Strength point 2)
-- (Strength point 3)
+- (Strength 1)
+- (Strength 2)
+- (Strength 3)
 
 Areas to Improve:
 - (Critique 1)
 - (Critique 2)
 
 Strategic Verdict:
-(One sharp, executive-level verdict on overall quality and readiness)"""),
+(One concise, high-level verdict on overall quality and readiness)"""),
 ])
 
 critic_chain = critic_prompt | critic_llm | StrOutputParser()

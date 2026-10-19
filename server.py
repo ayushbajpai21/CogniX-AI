@@ -129,29 +129,27 @@ def run_research(req: ResearchRequest):
 
     state = {}
 
-    # Step 1: Search Agent
-    search_agent = build_search_agent()
-    search_query = f"Find recent, reliable and detailed information about: {topic}. Include source URLs."
+    # Step 1: Scout Agent (Fast Direct Search)
+    search_query = f"{topic} 2026"
     if req.file_context and any(k in req.file_context.lower() for k in ["resume", "cv", "experience", "education", "skills", "projects", "engineer", "developer"]):
-        search_query = f"Find 2026 industry hiring requirements, key technical skills, salary expectations, and ATS criteria for roles related to: {topic}. Include specific source URLs."
-    sr = search_agent.invoke({
-        "messages": [("user", search_query)]
-    })
-    state["search_results"] = sr["messages"][-1].content
+        search_query = f"2026 industry hiring requirements skills salary benchmarks {topic}"
+    try:
+        state["search_results"] = web_search.invoke({"query": search_query})
+    except Exception as e:
+        state["search_results"] = f"Web search summary for {topic}."
 
-    # Step 2: Reader Agent (ensure valid URL is scraped)
+    # Step 2: Scholar Agent (Fast DOM Scraping)
     found_urls = extract_urls(state["search_results"])
     target_url = found_urls[0] if found_urls else ""
 
     if target_url:
-        reader_agent = build_reader_agent()
-        rr = reader_agent.invoke({
-            "messages": [("user", f"Scrape and extract detailed intelligence from this URL: {target_url}")]
-        })
-        state["scraped_content"] = rr["messages"][-1].content
+        try:
+            scraped = scrape_url.invoke({"url": target_url})
+            state["scraped_content"] = f"Source URL: {target_url}\n\nContent:\n{scraped[:3000]}"
+        except Exception:
+            state["scraped_content"] = state["search_results"][:1500]
     else:
-        # Fallback direct scrape or web search
-        state["scraped_content"] = scrape_url.invoke({"url": "https://en.wikipedia.org/wiki/" + topic.replace(" ", "_")})
+        state["scraped_content"] = state["search_results"][:1500]
 
     # Step 3: Writer Chain
     research_combined = (
@@ -184,37 +182,40 @@ async def stream_research(topic: str, context: Optional[str] = ""):
 
         state = {}
         try:
-            # 1. Search Agent
-            yield sse("progress", {"step": "search", "status": "running", "message": "Searching live internet & discovering primary sources..."})
-            await asyncio.sleep(0.1)
+            # 1. Scout Agent (Fast Direct Search)
+            yield sse("progress", {"step": "search", "status": "running", "message": "Scouting live internet & 2026 industry benchmarks..."})
+            await asyncio.sleep(0.05)
 
-            search_agent = build_search_agent()
-            search_query = f"Find recent, reliable and detailed information about: {topic}. Be thorough and list specific source URLs."
+            search_query = f"{topic} 2026"
             if context and any(k in context.lower() for k in ["resume", "cv", "experience", "education", "skills", "projects", "engineer", "developer"]):
-                search_query = f"Find 2026 industry hiring requirements, key technical skills, salary expectations, and ATS criteria for roles related to: {topic}. Include specific source URLs."
+                search_query = f"2026 industry hiring requirements skills salary benchmarks {topic}"
 
-            sr = await asyncio.to_thread(search_agent.invoke, {
-                "messages": [("user", search_query)]
-            })
-            state["search_results"] = sr["messages"][-1].content
+            try:
+                raw_search = await asyncio.to_thread(web_search.invoke, {"query": search_query})
+            except Exception as se:
+                raw_search = f"Web discovery note: {str(se)}"
+
+            state["search_results"] = raw_search or "Primary web benchmarks indexed."
             yield sse("progress", {"step": "search", "status": "done", "data": state["search_results"]})
 
-            # 2. Reader Agent
-            yield sse("progress", {"step": "reader", "status": "running", "message": "Parsing DOM & scraping deep content from top source..."})
-            await asyncio.sleep(0.1)
+            # 2. Scholar Agent (Fast DOM Scraping)
+            yield sse("progress", {"step": "reader", "status": "running", "message": "Parsing DOM & mining source content..."})
+            await asyncio.sleep(0.05)
 
             found_urls = extract_urls(state["search_results"])
             target_url = found_urls[0] if found_urls else ""
 
             if target_url:
-                scraped_text = await asyncio.to_thread(scrape_url.invoke, {"url": target_url})
-                if "Could not scrape" not in scraped_text and len(scraped_text) > 100:
-                    state["scraped_content"] = f"Source URL: {target_url}\n\nContent:\n{scraped_text}"
-                else:
-                    state["scraped_content"] = f"Source: {target_url}\n\nKey Insights:\n" + state["search_results"][:1500]
+                try:
+                    scraped_text = await asyncio.to_thread(scrape_url.invoke, {"url": target_url})
+                    if "Could not scrape" not in scraped_text and len(scraped_text) > 100:
+                        state["scraped_content"] = f"Source URL: {target_url}\n\nContent:\n{scraped_text[:3000]}"
+                    else:
+                        state["scraped_content"] = f"Source: {target_url}\n\nKey Insights:\n" + state["search_results"][:1500]
+                except Exception:
+                    state["scraped_content"] = state["search_results"][:1500]
             else:
-                fallback_scrape = await asyncio.to_thread(scrape_url.invoke, {"url": "https://en.wikipedia.org/wiki/" + topic.replace(" ", "_")})
-                state["scraped_content"] = fallback_scrape if "Could not scrape" not in fallback_scrape else state["search_results"][:1500]
+                state["scraped_content"] = state["search_results"][:1500]
 
             yield sse("progress", {"step": "reader", "status": "done", "data": state["scraped_content"]})
 
