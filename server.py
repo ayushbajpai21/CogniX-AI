@@ -52,6 +52,22 @@ def health_check():
     }
 
 
+@app.get("/api/nearby-companies")
+async def fetch_nearby_companies(query: str = "noida"):
+    """
+    Dynamic endpoint to retrieve verified nearby tech companies, IT parks,
+    and software offices based on user's searched location or 'near me'.
+    Uses Tavily, DDGS, and Groq LLM agent to search live web data in real-time.
+    """
+    companies = await asyncio.to_thread(get_nearby_companies, query)
+    return {
+        "query": query,
+        "count": len(companies),
+        "companies": companies,
+        "source": "dynamic_ai_scout"
+    }
+
+
 @app.post("/api/upload")
 async def upload_document(file: UploadFile = File(...)):
     filename = file.filename or "uploaded_file"
